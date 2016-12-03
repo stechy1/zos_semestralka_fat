@@ -1,9 +1,7 @@
 #include <iostream>
-#include <string.h>
+#include <cstring>
 #include <unistd.h>
-#include <bits/unique_ptr.h>
-#include <cstdio>
-#include "fat.hpp"
+#include "Fat.hpp"
 
 // Definice proveditelných akcí
 const std::string ACTION_A = "-a";
@@ -15,70 +13,83 @@ const std::string ACTION_L = "-l";
 const std::string ACTION_P = "-p";
 // Moje definice akcí
 const std::string ACTION_N = "-n";
+const std::string ACTION_D = "-d";
 
 
-// Definice vlastnosti boot recordu
-const unsigned int FAT_COPIES = 2;
-const unsigned int FAT_TYPE = 12; // == FAT12, je možné i FAT32...
-const unsigned int CLUSTER_SIZE = 128;
-const unsigned int RESERVER_CLUSTER_COUNT = 10;
-const long ROOT_DIRECTORY_MAX_ENTRIES_COUNT = 3;
-const unsigned int FAT_SIZE = 2^FAT_TYPE;
-const unsigned int CLUSTER_COUNT = FAT_SIZE - RESERVER_CLUSTER_COUNT;
-// Oddělovač
-const std::string FILE_DELIMITER = "/";
-
-// Název souboru s fatkou
-std::string fileName;
-
-unsigned int fat[FAT_SIZE];
-std::unique_ptr<boot_record> br;
+//void initEmptyRootDir() {
+//    emptyRootDir = std::make_unique<root_directory>();
+//
+//    memset(emptyRootDir->file_name, '\0', sizeof(emptyRootDir->file_name));
+//    strcpy(emptyRootDir->file_name, "empty");
+//    emptyRootDir->file_size = 0;
+//    emptyRootDir->file_type = 1;
+//    memset(emptyRootDir->file_mod, '\0', sizeof(emptyRootDir->file_mod));
+//    strcpy(emptyRootDir->file_mod, "rwxrwxrwx");
+//    emptyRootDir->first_cluster = FAT_UNUSED;
+//}
 
 // Vyčistí záznamy celé fatky
-void clearFat(int offset) {
-    if (offset < 0 || offset > FAT_SIZE) {
-        return;
-    }
-
-    for (int i = offset; i<=FAT_SIZE; i++) {
-        fat[i] = FAT_UNUSED;
-    }
-}
+//void clearFat(int offset) {
+//    if (offset < 0 || offset > FAT_SIZE) {
+//        return;
+//    }
+//
+//    for (int i = offset; i<=FAT_SIZE; i++) {
+//        Fat[i] = FAT_UNUSED;
+//    }
+//}
 
 // Vytvoří nový boot record podle výchozích konstant
-void createNewBootRecord() {
-    br = std::make_unique<boot_record>();
-
-    memset(br->signature, '\0', sizeof(br->signature));
-    memset(br->volume_descriptor, '\0', sizeof(br->volume_descriptor));
-    strcpy(br->signature, "OK");
-    strcpy(br->volume_descriptor, "Volume descriptor");
-    br->fat_copies = FAT_COPIES;
-    br->fat_type = FAT_TYPE;
-    br->cluster_size = CLUSTER_SIZE;
-    br->cluster_count = CLUSTER_COUNT;
-    br->reserved_cluster_count = RESERVER_CLUSTER_COUNT;
-    br->root_directory_max_entries_count = ROOT_DIRECTORY_MAX_ENTRIES_COUNT;
-}
+//void createNewBootRecord() {
+//    br = std::make_unique<boot_record>();
+//
+//    memset(br->signature, '\0', sizeof(br->signature));
+//    memset(br->volume_descriptor, '\0', sizeof(br->volume_descriptor));
+//    strcpy(br->signature, "OK");
+//    strcpy(br->volume_descriptor, "Volume descriptor");
+//    br->fat_copies = FAT_COPIES;
+//    br->fat_type = FAT_TYPE;
+//    br->cluster_size = CLUSTER_SIZE;
+//    br->cluster_count = CLUSTER_COUNT;
+//    br->reserved_cluster_count = RESERVER_CLUSTER_COUNT;
+//    br->root_directory_max_entries_count = ROOT_DIRECTORY_MAX_ENTRIES_COUNT;
+//}
 
 // Vytvoří novou fatku a zapíše jí do souboru
-void createEmptyFatTable() {
-    unlink(fileName.c_str());
-    FILE *fp = fopen(fileName.c_str(), "w+");
+//void createEmptyFatTable() {
+//    unlink(fileName.c_str());
+//    FILE *fp = fopen(fileName.c_str(), "w+");
+//
+//    createNewBootRecord();
+//    clearFat(0);
+//
+//    // Zápis boot recordu
+//    fwrite(&(*br), sizeof(*br), 1, fp);
+//
+//    // Zápis čisté fatky
+//    fwrite(&Fat, sizeof(Fat), 1, fp);
+//    fwrite(&Fat, sizeof(Fat), 1, fp);
 
-    createNewBootRecord();
-    clearFat(0);
 
-    // Zápis boot recordu
-    fwrite(&(*br), sizeof(*br), 1, fp);
+//    fclose(fp);
+//}
 
-    // Zápis čisté fatky
-    fwrite(&fat, sizeof(fat), 1, fp);
-    fwrite(&fat, sizeof(fat), 1, fp);
-
-
-    fclose(fp);
-}
+//void writeFat() {
+//    unlink(fileName.c_str());
+//    FILE *fp = fopen(fileName.c_str(), "w+");
+//
+//    // Zápis boot recordu
+//    fwrite(&(*br), sizeof(*br), 1, fp);
+//
+//    // Zápis N fatek
+//    for (int i = 0; i < br->fat_copies; ++i) {
+//        fwrite(&Fat, sizeof(Fat), 1, fp);
+//    }
+//
+//
+//
+//    fclose(fp);
+//}
 
 int main (int argc, char *argv[]) {
     if (argc < 3) {
@@ -86,8 +97,7 @@ int main (int argc, char *argv[]) {
         exit(1);
     }
 
-
-    fileName = argv[1];
+    std::string fileName(argv[1]);
     std::string action(argv[2]);
 
     if (action == ACTION_A) {        // Nahraje soubor z adresáře do cesty virtuální FAT tabulky
@@ -106,6 +116,11 @@ int main (int argc, char *argv[]) {
 
     } else if (action == ACTION_N) { // Vytvoří novou čistou fatku
 
+    } else if (action == ACTION_D) { // Vypíše obsah celé fatky
+        Fat fat(fileName);
+        fat.loadFat();
+        fat.printBootRecord();
+        fat.printRootDirectories();
     } else  {
         std::cout << "Neznámá akce" << std::endl;
         exit(1);
