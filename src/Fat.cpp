@@ -165,7 +165,7 @@ std::shared_ptr<root_directory> Fat:: findFirstCluster(
     std::string fileName;
 
     if (separatorIndex == std::string::npos) {
-        fileName == path;
+        fileName = path;
     } else {
         fileName = path.substr(0, separatorIndex);
     }

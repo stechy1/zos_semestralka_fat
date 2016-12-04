@@ -21,9 +21,9 @@ const unsigned int CLUSTER_COUNT = FAT_SIZE - RESERVER_CLUSTER_COUNT;
 const std::string PATH_SEPARATOR = "/";
 
 // File typy
-const short FILE_TYPE_FILE = 0;
-const short FILE_TYPE_DIRECTORY = 1;
-const short FILE_TYPE_UNUSED = 2;
+const short FILE_TYPE_UNUSED = 0;
+const short FILE_TYPE_FILE = 1;
+const short FILE_TYPE_DIRECTORY = 2;
 
 //struktura na boot record
 struct boot_record {
