@@ -58,6 +58,8 @@ public:
     void printBootRecord();
     void printRootDirectories();
     void printRootDirectory(std::shared_ptr<root_directory> t_rootDirectory);
+    void printClustersContent();
+    void printFileContent(std::shared_ptr<root_directory> t_rootDirectory);
 
 private:
     std::string mFilePath = "";

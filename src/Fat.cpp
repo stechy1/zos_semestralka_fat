@@ -40,7 +40,7 @@ void Fat::printRootDirectories() {
     printf("-------------------------------------------------------- \n");
     printf("ROOT DIRECTORY \n");
     printf("-------------------------------------------------------- \n");
-    
+
     for (auto &&root_directory : mRoot_directories) {
         printRootDirectory(root_directory);
     }
@@ -55,6 +55,51 @@ void Fat::printRootDirectory(std::shared_ptr<root_directory> t_rootDirectory) {
     printf("first_cluster :%d\n",t_rootDirectory->first_cluster);
 }
 
+// Vypíše obsahy clusterů, které obsahují soubory
+void Fat::printClustersContent() {
+    assert(m_fatFile != nullptr);
+    assert(mBootRecord != nullptr);
+
+    auto *p_cluster = new char[mBootRecord->cluster_size];
+    std::memset(p_cluster, '\0', sizeof(p_cluster));
+    std::fseek(&(*m_fatFile), static_cast<int>(getClustersStartIndex()), SEEK_SET);
+
+    for (int i = 0; i < mBootRecord->cluster_count; ++i) {
+        std::fread(p_cluster, sizeof(char) * mBootRecord->cluster_size, 1, &(*m_fatFile));
+
+        if (p_cluster[0] == '\0') {
+            printf("Cluster %d: skip\n", i);
+            continue;
+        }
+
+        printf("Cluster %d: %s\n", i, p_cluster);
+    }
+
+    delete[] p_cluster;
+}
+
+// Vypíše obsah celého souboru
+void Fat::printFileContent(std::shared_ptr<root_directory> t_rootDirectory) {
+    assert(m_fatFile != nullptr);
+    assert(mBootRecord != nullptr);
+
+    auto *p_cluster = new char[mBootRecord->cluster_size];
+    std::memset(p_cluster, '\0', sizeof(p_cluster));
+    auto workingCluster = t_rootDirectory->first_cluster;
+    bool isEOF;
+
+    do {
+        std::fseek(&(*m_fatFile), getClusterStartIndex(workingCluster), SEEK_SET);
+
+        std::fread(p_cluster, sizeof(char) * mBootRecord->cluster_size, 1, &(*m_fatFile));
+        printf("Cluster %d: %s\n", workingCluster, p_cluster);
+        workingCluster = mFatTable[workingCluster];
+        isEOF = workingCluster == FAT_FILE_END;
+
+    } while (!isEOF);
+
+    delete[] p_cluster;
+}
 
 // Private methods
 
