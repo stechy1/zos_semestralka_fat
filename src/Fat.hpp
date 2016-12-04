@@ -18,7 +18,7 @@ const long ROOT_DIRECTORY_MAX_ENTRIES_COUNT = 3;
 const unsigned int FAT_SIZE = 2^FAT_TYPE;
 const unsigned int CLUSTER_COUNT = FAT_SIZE - RESERVER_CLUSTER_COUNT;
 // Oddělovač
-const std::string FILE_DELIMITER = "/";
+const std::string PATH_SEPARATOR = "/";
 
 //struktura na boot record
 struct boot_record {
@@ -64,7 +64,7 @@ private:
     std::unique_ptr<FILE> m_fatFile;
     std::unique_ptr<boot_record> mBootRecord;
     std::vector<std::shared_ptr<root_directory>> mRoot_directories;
-    std::unique_ptr<int[]> mFatTable;
+    std::unique_ptr<unsigned int[]> mFatTable;
 
     long m_FatStartIndex = 0;
     long m_RootDirectoryStartIndex = 0;
@@ -72,12 +72,12 @@ private:
 
     void loadBootRecord();
     void loadFatTable();
-    void loadRootDirectories();
+    void loadRootDirectories(long offset);
 
-    long getFatStartIndex();
-    long getRootDirectoryStartIndex();
-    long getClustersStartIndex();
-    long getClusterStartIndex(int offset);
+    const long getFatStartIndex();
+    const long getRootDirectoryStartIndex();
+    const long getClustersStartIndex();
+    const long getClusterStartIndex(int offset);
 
 };
 

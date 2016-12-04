@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <cstring>
 #include "Fat.hpp"
 
 
@@ -11,8 +12,8 @@ void Fat::loadFat() {
     m_fatFile.reset(fopen(mFilePath.c_str(), "r"));
     loadBootRecord();
     loadFatTable();
-    loadRootDirectories();
-    fclose(&(*m_fatFile));
+    loadRootDirectories(getRootDirectoryStartIndex());
+    //fclose(&(*m_fatFile));
 }
 
 // Print methods
@@ -64,7 +65,7 @@ void Fat::loadBootRecord() {
 
     std::fread(&(*mBootRecord), sizeof(struct boot_record), 1, &(*m_fatFile));
 
-    mFatTable = std::unique_ptr<int[]>(new int[mBootRecord->cluster_count]);
+    mFatTable = std::unique_ptr<unsigned int[]>(new unsigned int[mBootRecord->cluster_count]);
     for (int i = 0; i < mBootRecord->cluster_count; ++i) {
         mFatTable[i] = FAT_UNUSED;
     }
@@ -76,38 +77,37 @@ void Fat::loadFatTable() {
 
     std::fseek(&(*m_fatFile), getFatStartIndex(), SEEK_SET);
 
-    unsigned int *fat_item;
-    fat_item = (unsigned int *) malloc(sizeof(unsigned int));
+    unsigned int *fat_item = new unsigned int;
     for (int i = 0; i < mBootRecord->cluster_count; i++) {
-        fread(fat_item, sizeof(*fat_item), 1, &(*m_fatFile));
+        std::fread(fat_item, sizeof(*fat_item), 1, &(*m_fatFile));
         mFatTable[i] = *fat_item;
     }
 
     for (int i = 0; i < mBootRecord->fat_copies - 1; ++i) {
-        fread(fat_item, sizeof(*fat_item), 1, &(*m_fatFile));
+        std::fread(fat_item, sizeof(*fat_item), 1, &(*m_fatFile));
     }
 
-    free(fat_item);
+    delete fat_item;
 }
 
-
 // Načte root directories
-void Fat::loadRootDirectories() {
+void Fat::loadRootDirectories(long offset) {
     assert(mBootRecord != nullptr);
 
-    std::fseek(&(*m_fatFile), getRootDirectoryStartIndex(), SEEK_SET);
+    std::fseek(&(*m_fatFile), offset, SEEK_SET);
     mRoot_directories = std::vector<std::shared_ptr<root_directory>>(mBootRecord->root_directory_max_entries_count);
 
     for (int i = 0; i < mBootRecord->root_directory_max_entries_count; i++) {
         auto rootDirectory = std::make_shared<root_directory>();
-        fread(&(*rootDirectory), sizeof(struct root_directory), 1, &(*m_fatFile));
+        std::fread(&(*rootDirectory), sizeof(struct root_directory), 1, &(*m_fatFile));
 
         mRoot_directories[i] = rootDirectory;
     }
 }
 
+
 // Vrátí index, kde začíná definice fat tabulky
-long Fat::getFatStartIndex() {
+const long Fat::getFatStartIndex() {
     if (m_FatStartIndex == 0) {
         m_FatStartIndex = sizeof(boot_record);
     }
@@ -116,7 +116,7 @@ long Fat::getFatStartIndex() {
 }
 
 // Vrátí index, kde začíná definice root directory
-long Fat::getRootDirectoryStartIndex() {
+const long Fat::getRootDirectoryStartIndex() {
     if (m_RootDirectoryStartIndex == 0) {
         m_RootDirectoryStartIndex = getFatStartIndex() + ((sizeof(unsigned int)) * mBootRecord->cluster_count) * mBootRecord->fat_copies;
     }
@@ -125,13 +125,15 @@ long Fat::getRootDirectoryStartIndex() {
 }
 
 // Vrátí index, kde začínají clustry
-long Fat::getClustersStartIndex() {
+const long Fat::getClustersStartIndex() {
     if (m_ClustersStartIndex == 0) {
         m_ClustersStartIndex = getRootDirectoryStartIndex() + (sizeof(root_directory)) * mBootRecord->root_directory_max_entries_count;
     }
     return m_ClustersStartIndex;
 }
 
-long Fat::getClusterStartIndex(int offset) {
-    return 0;
+// Vrátí index, kde začíná obsah požadovaného clusteru
+const long Fat::getClusterStartIndex(int offset) {
+    return static_cast<int>(getClustersStartIndex()) + (offset) * mBootRecord->cluster_size;
 }
+
