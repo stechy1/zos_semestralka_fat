@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <cstring>
+#include <exception>
 #include "Fat.hpp"
 
 
@@ -12,9 +13,14 @@ void Fat::loadFat() {
     m_fatFile.reset(fopen(mFilePath.c_str(), "r"));
     loadBootRecord();
     loadFatTable();
-    loadRootDirectories(getRootDirectoryStartIndex());
+    mRoot_directories = loadRootDirectories(getRootDirectoryStartIndex());
     //fclose(&(*m_fatFile));
 }
+
+std::shared_ptr<root_directory> Fat::findFirstCluster(const std::string &path) {
+    return findFirstCluster(mRoot_directories, path);
+}
+
 
 // Print methods
 
@@ -136,18 +142,46 @@ void Fat::loadFatTable() {
 }
 
 // Načte root directories
-void Fat::loadRootDirectories(long offset) {
+std::vector<std::shared_ptr<root_directory>> Fat::loadRootDirectories(long offset) {
     assert(mBootRecord != nullptr);
 
     std::fseek(&(*m_fatFile), offset, SEEK_SET);
-    mRoot_directories = std::vector<std::shared_ptr<root_directory>>(mBootRecord->root_directory_max_entries_count);
+    auto rootDirectories = std::vector<std::shared_ptr<root_directory>>(mBootRecord->root_directory_max_entries_count);
 
     for (int i = 0; i < mBootRecord->root_directory_max_entries_count; i++) {
         auto rootDirectory = std::make_shared<root_directory>();
         std::fread(&(*rootDirectory), sizeof(struct root_directory), 1, &(*m_fatFile));
 
-        mRoot_directories[i] = rootDirectory;
+        rootDirectories[i] = rootDirectory;
     }
+
+    return rootDirectories;
+}
+
+// Najde první root_directory, která odpovídá zadané cestě
+std::shared_ptr<root_directory> Fat:: findFirstCluster(
+        const std::vector<std::shared_ptr<root_directory>> &t_Root_directories, const std::string &path) {
+    auto separatorIndex = path.find(PATH_SEPARATOR);
+    std::string fileName;
+
+    if (separatorIndex == std::string::npos) {
+        fileName == path;
+    } else {
+        fileName = path.substr(0, separatorIndex);
+    }
+
+    for (auto &&rootDirectory : t_Root_directories) {
+        std::string directoryName = rootDirectory->file_name;
+        if (fileName == directoryName) { // Když najdu požadovaný soubor
+            if (rootDirectory->file_type == FILE_TYPE_FILE) { // Jedná -li se o soubor, tak ho vrátím
+                return rootDirectory;
+            } else {
+                return findFirstCluster(loadRootDirectories(getClusterStartIndex(1)), path.substr(separatorIndex + 1, path.size()));
+            }
+        }
+    }
+
+    throw std::runtime_error("File not found");
 }
 
 

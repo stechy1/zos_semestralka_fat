@@ -20,6 +20,11 @@ const unsigned int CLUSTER_COUNT = FAT_SIZE - RESERVER_CLUSTER_COUNT;
 // Oddělovač
 const std::string PATH_SEPARATOR = "/";
 
+// File typy
+const short FILE_TYPE_FILE = 0;
+const short FILE_TYPE_DIRECTORY = 1;
+const short FILE_TYPE_UNUSED = 2;
+
 //struktura na boot record
 struct boot_record {
     char volume_descriptor[251];              //popis
@@ -61,6 +66,9 @@ public:
     void printClustersContent();
     void printFileContent(std::shared_ptr<root_directory> t_rootDirectory);
 
+    std::shared_ptr<root_directory> findFirstCluster(const std::string &path);
+
+
 private:
     std::string mFilePath = "";
     std::unique_ptr<FILE> m_fatFile;
@@ -74,7 +82,10 @@ private:
 
     void loadBootRecord();
     void loadFatTable();
-    void loadRootDirectories(long offset);
+    std::vector<std::shared_ptr<root_directory>> loadRootDirectories(long offset);
+
+    std::shared_ptr<root_directory> findFirstCluster(
+            const std::vector<std::shared_ptr<root_directory>> &t_Root_directories, const std::string &path);
 
     const long getFatStartIndex();
     const long getRootDirectoryStartIndex();
