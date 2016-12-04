@@ -67,7 +67,7 @@ public:
     void printFileContent(std::shared_ptr<root_directory> t_rootDirectory);
 
     std::shared_ptr<root_directory> findFirstCluster(const std::string &path);
-
+    std::vector<unsigned int> getClusters(std::shared_ptr<root_directory> t_rootDirectory);
 
 private:
     std::string mFilePath = "";

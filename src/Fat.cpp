@@ -21,6 +21,22 @@ std::shared_ptr<root_directory> Fat::findFirstCluster(const std::string &path) {
     return findFirstCluster(mRoot_directories, path);
 }
 
+std::vector<unsigned int> Fat::getClusters(std::shared_ptr<root_directory> t_rootDirectory) {
+    assert(mFatTable != nullptr);
+
+    auto clusters = std::vector<unsigned int>();
+    auto workingCluster = t_rootDirectory->first_cluster;
+    bool isEOF;
+
+    do {
+        clusters.push_back(workingCluster);
+        workingCluster = mFatTable[workingCluster];
+        isEOF = workingCluster == FAT_FILE_END;
+    } while (!isEOF);
+
+    return clusters;
+}
+
 
 // Print methods
 
@@ -215,4 +231,3 @@ const long Fat::getClustersStartIndex() {
 const long Fat::getClusterStartIndex(int offset) {
     return static_cast<int>(getClustersStartIndex()) + (offset) * mBootRecord->cluster_size;
 }
-

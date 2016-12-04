@@ -17,6 +17,13 @@ const std::string ACTION_D = "-d";
 
 const std::string PATH_NOT_FOUND = "PATH NOT FOUND";
 
+void printClusters(std::vector<unsigned int> clusters) {
+    for (auto &&cluster : clusters) {
+        std::cout << cluster << ", ";
+    }
+
+}
+
 int main (int argc, char *argv[]) {
     if (argc < 3) {
         perror("Příliš málo argumentů na můj vkus. Zkuste to s větším počtem. Končím!!!");
@@ -31,6 +38,15 @@ int main (int argc, char *argv[]) {
     } else if (action == ACTION_F) { // Smaže soubor s1 z vaseFAT.dat (s1 je plná cesta ve virtuální FAT)
 
     } else if (action == ACTION_C) { // Vypíše čísla clusterů, oddělené dvojtečkou, obsahující data souboru s1 (s1 je plná cesta ve virtuální FAT)
+        Fat fat(fileName);
+        fat.loadFat();
+
+        std::string filePath = argv[3];
+        auto rootDirectory = fat.findFirstCluster(filePath);
+        auto clusters = fat.getClusters(rootDirectory);
+
+        std::cout << filePath << ": ";
+        printClusters(clusters);
 
     } else if (action == ACTION_M) { // Vytvoří nový adresář ADR v cestě ADR2
 
