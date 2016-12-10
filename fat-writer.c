@@ -64,16 +64,38 @@ int main(){
     strcpy(cluster_c2,"mentovany...");
 
     //zapisu natvrdo acko
+//    fat[0] = FAT_FILE_END;
+//    struct root_directory root_a;
+//    memset(root_a.file_name, '\0', sizeof(root_a.file_name));
+//    strcpy(root_a.file_name, "a.txt");
+//    root_a.file_size = 100;
+//    root_a.file_type = 1;
+//    memset(root_a.file_mod, '\0', sizeof(root_a.file_mod));
+//    strcpy(root_a.file_mod, "rwxrwxrwx");
+//    root_a.first_cluster = 0;
+
+    // zapíšu složku
     fat[0] = FAT_FILE_END;
+    struct root_directory root_folder;
+    memset(root_folder.file_name, '\0', sizeof(root_folder.file_name));
+    strcpy(root_folder.file_name, "folder");
+    root_folder.file_size = 100;
+    root_folder.file_type = 2;
+    memset(root_folder.file_mod, '\0', sizeof(root_folder.file_mod));
+    strcpy(root_folder.file_mod, "rwxrwxrwx");
+    root_folder.first_cluster = 10;
+
+    // Zapíšu soubor ve složce folder
+    fat[10] = FAT_FILE_END;
     struct root_directory root_a;
     memset(root_a.file_name, '\0', sizeof(root_a.file_name));
     strcpy(root_a.file_name, "a.txt");
     root_a.file_size = 100;
     root_a.file_type = 1;
     memset(root_a.file_mod, '\0', sizeof(root_a.file_mod));
-    strcpy(root_a.file_mod, "rwxrwxrwx");    
-    root_a.first_cluster = 0;            
-        
+    strcpy(root_a.file_mod, "rwxrwxrwx");
+    root_a.first_cluster = 10;
+
     //zapisu natvrdo bcko
     fat[1] = 2;
     fat[2] = 3;
@@ -105,7 +127,7 @@ int main(){
     fat[8] = FAT_FILE_END;    
         
     //clearnu zbytek fatky          
-    for (int i = 9; i<=4086; i++)
+    for (int i = 10; i<=4086; i++)
     {
         fat[i] = FAT_UNUSED;
     }
@@ -123,18 +145,18 @@ int main(){
     br.root_directory_max_entries_count = 3;
     
     unlink("output.fat");
-    fp = fopen("output.fat", "w");
+    fp = fopen("output_folders.fat", "w");
     //boot record
     fwrite(&br, sizeof(br), 1, fp);
     // 2x FAT
     fwrite(&fat, sizeof(fat), 1, fp);
     fwrite(&fat, sizeof(fat), 1, fp);
     // root directory
-    fwrite(&root_a, sizeof(root_a), 1, fp);
+    fwrite(&root_folder, sizeof(root_folder), 1, fp);
     fwrite(&root_b, sizeof(root_b), 1, fp);
     fwrite(&root_c, sizeof(root_c), 1, fp);
     // clustery - data
-    fwrite(&cluster_a, sizeof(cluster_a), 1, fp);                             //cluster 0
+    fwrite(&root_a, sizeof(root_a), 1, fp);                                   //cluster 0 // Složka ukazující na cluster 9
     fwrite(&cluster_b1, sizeof(cluster_b1), 1, fp);                           //cluster 1
     fwrite(&cluster_b2, sizeof(cluster_b2), 1, fp);                           //cluster 2
     fwrite(&cluster_b3, sizeof(cluster_b3), 1, fp);                           //cluster 3
@@ -143,8 +165,9 @@ int main(){
     fwrite(&cluster_c1, sizeof(cluster_c1), 1, fp);                           //cluster 6
     fwrite(&cluster_empty, sizeof(cluster_empty), 1, fp);                     //cluster 7
     fwrite(&cluster_c2, sizeof(cluster_c2), 1, fp);                           //cluster 8
+    fwrite(&cluster_a, sizeof(cluster_a), 1, fp);                             //cluster 9
     //vynuluj zbytek datovych bloku
-    for (int i=9; i<4076; i++)
+    for (int i=10; i<4076; i++)
         fwrite(&cluster_empty, sizeof(cluster_empty), 1, fp);
     fclose(fp);   
     return 0;

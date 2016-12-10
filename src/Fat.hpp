@@ -41,7 +41,7 @@ struct boot_record {
 struct root_directory{
     char file_name[13];             //8+3 format + '/0' = 12 -> 13
     char file_mod[10];              //unix atributy souboru+ '/0' rvxrvxrvx
-    short file_type;                //0 = soubor, 1 = adresar, 2 = nepouzito
+    short file_type;                //1 = soubor, 2 = adresar, 0 = nepouzito
     long file_size;                 //pocet znaku v souboru
     unsigned int first_cluster;     //cluster ve FAT, kde soubor zacina - POZOR v cislovani root_directory ma prvni cluster index 0 (viz soubor a.txt)
 };
@@ -55,9 +55,15 @@ public:
     Fat(Fat &&other) = delete;
     Fat& operator=(Fat&& other) = delete;
 
-    ~Fat() = default;
+    ~Fat();
 
     void loadFat();
+    std::shared_ptr<root_directory> findFirstCluster(const std::string &t_path);
+    std::vector<unsigned int> getClusters(std::shared_ptr<root_directory> t_fileEntry);
+    void createDirectory(const std::string &t_path, const std::string &t_addr);
+    void createEmptyFat();
+
+    void save();
 
     // Print methods
     void printBootRecord();
@@ -66,15 +72,12 @@ public:
     void printClustersContent();
     void printFileContent(std::shared_ptr<root_directory> t_rootDirectory);
 
-    std::shared_ptr<root_directory> findFirstCluster(const std::string &path);
-    std::vector<unsigned int> getClusters(std::shared_ptr<root_directory> t_rootDirectory);
-
 private:
-    std::string mFilePath = "";
-    std::unique_ptr<FILE> m_fatFile;
-    std::unique_ptr<boot_record> mBootRecord;
-    std::vector<std::shared_ptr<root_directory>> mRoot_directories;
-    std::unique_ptr<unsigned int[]> mFatTable;
+    std::string m_FilePath = "";
+    FILE *m_FatFile;
+    std::unique_ptr<boot_record> m_BootRecord;
+    std::vector<std::shared_ptr<root_directory>> m_RootDirectories;
+    unsigned int **m_fatTables;
 
     long m_FatStartIndex = 0;
     long m_RootDirectoryStartIndex = 0;
@@ -82,15 +85,21 @@ private:
 
     void loadBootRecord();
     void loadFatTable();
-    std::vector<std::shared_ptr<root_directory>> loadRootDirectories(long offset);
+    std::vector<std::shared_ptr<root_directory>> loadRootDirectory(long t_offset);
+
+    void saveBootRecord();
+    void saveFatTables();
+    void saveRootDirectory();
 
     std::shared_ptr<root_directory> findFirstCluster(
-            const std::vector<std::shared_ptr<root_directory>> &t_Root_directories, const std::string &path);
+            const std::vector<std::shared_ptr<root_directory>> &t_RootDirectory, const std::string &t_path);
 
     const long getFatStartIndex();
     const long getRootDirectoryStartIndex();
     const long getClustersStartIndex();
     const long getClusterStartIndex(int offset);
+    const unsigned int getFreeCluster();
+
 
 };
 
