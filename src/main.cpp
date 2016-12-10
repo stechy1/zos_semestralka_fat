@@ -51,8 +51,8 @@ int main (int argc, char *argv[]) {
     } else if (action == ACTION_M) { // Vytvoří nový adresář ADR v cestě ADR2
         Fat fat(fileName);
         fat.loadFat();
-        std::string addr = argv[3];
-        std::string addrPath = argv[4];
+        std::string addrPath = argv[3];
+        std::string addr = argv[4];
 
         fat.createDirectory(addrPath, addr);
         fat.save();
