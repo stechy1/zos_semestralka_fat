@@ -2,21 +2,22 @@
 Tématem semestrální práce bude práce s tabulkou pseudoFAT. Vaším cílem bude splnit několik
 vybraných úloh.
 Základní funkčnost, kterou musí program splňovat. Formát výpisů je závazný.
-1. Nahraje soubor z adresáře do cesty virtuální FAT tabulky
+
+\#1. Nahraje soubor z adresáře do cesty virtuální FAT tabulky
 ```
 ./program vaseFAT.dat -a s1 ADR
 Možný výsledek:
 OK
 PATH NOT FOUND
 ```
-2. Smaže soubor s1 z vaseFAT.dat (s1 je plná cesta ve virtuální FAT)
+\#2. Smaže soubor s1 z vaseFAT.dat (s1 je plná cesta ve virtuální FAT)
 ```
 ./program vaseFAT.dat -f s1
 Možný výsledek:
 OK
 PATH NOT FOUND
 ```
-3. Vypíše čísla clusterů, oddělené dvojtečkou, obsahující data souboru s1 (s1 je plná cesta ve
+\#3. Vypíše čísla clusterů, oddělené dvojtečkou, obsahující data souboru s1 (s1 je plná cesta ve
 virtuální FAT)
 ```
 ./program vaseFAT.dat -c s1
@@ -24,14 +25,14 @@ Možný výsledek:
 S1 2,3,4,9,15
 PATH NOT FOUND
 ```
-4. Vytvoří nový adresář ADR v cestě ADR2
+\#4. Vytvoří nový adresář ADR v cestě ADR2
 ```
 ./program vaseFAT.dat -m ADR ADR2
 Možný výsledek:
 OK
 PATH NOT FOUND
 ```
-5. Smaže prázdný adresář ADR (ADR je plná cesta ve virtuální FAT)
+\#5. Smaže prázdný adresář ADR (ADR je plná cesta ve virtuální FAT)
 ```
 ./program vaseFAT.dat -r ADR
 Možný výsledek:
@@ -39,14 +40,14 @@ OK
 PATH NOT FOUND
 PATH NOT EMPTY
 ```
-6. Vypíše obsah souboru s1 na obrazovku (s1 je plná cesta ve virtuální FAT)
+\#6. Vypíše obsah souboru s1 na obrazovku (s1 je plná cesta ve virtuální FAT)
 ```
 ./program vaseFAT.dat -l s1
 Možný výsledek:
 PATH NOT FOUND
 S1: toto je obsah souboru.
 ```
-7. Vypíše obsah adresáře ve formátu +adresář, +podadresář cluster, ukončeno --, - soubor
+\#7. Vypíše obsah adresáře ve formátu +adresář, +podadresář cluster, ukončeno --, - soubor
 první_cluster počet_clusterů. Jeden záznam jeden řádek. Podadresáře odsazeny o /t:
 ```
 ./program vaseFAT.dat -p
@@ -107,19 +108,3 @@ Při kontrole semestrální práce bude hodnocena:
 * Kvalita a čitelnost kódu včetně komentářů
 * Funkčnost a kvalita řešení (výsledné časy, přístup k paralelnímu zpracování)
 * Dokumentace
-
-
-## Licence
-   Copyright 2016 Petr Štechmüller
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
