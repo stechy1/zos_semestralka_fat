@@ -59,7 +59,7 @@ int main (int argc, char *argv[]) {
         try {
             fat.insertFile(filePath, pseudoPath);
         } catch (std::exception &ex) {
-
+            std::cout << ex.what() << std::endl;
         }
     } else if (action == ACTION_F) { // Smaže soubor s1 z vaseFAT.dat (s1 je plná cesta ve virtuální FAT)
 
@@ -68,11 +68,16 @@ int main (int argc, char *argv[]) {
         fat.loadFat();
 
         std::string filePath = argv[3];
-        auto rootDirectory = fat.findFirstCluster(filePath);
-        auto clusters = fat.getClusters(rootDirectory);
+        try {
+            auto rootDirectory = fat.findFirstCluster(filePath);
 
-        std::cout << filePath << ": ";
-        printClusters(clusters);
+            auto clusters = fat.getClusters(rootDirectory);
+
+            std::cout << filePath << ": ";
+            printClusters(clusters);
+        } catch (std::exception &ex) {
+            std::cout << ex.what() << std::endl;
+        }
 
     } else if (action == ACTION_M) { // Vytvoří nový adresář ADR v cestě ADR2
         Fat fat(fileName);
@@ -80,7 +85,11 @@ int main (int argc, char *argv[]) {
         std::string addrPath = argv[3];
         std::string addr = argv[4];
 
-        fat.createDirectory(addrPath, addr);
+        try {
+            fat.createDirectory(addrPath, addr);
+        } catch (std::exception &ex) {
+            std::cout << ex.what() << std::endl;
+        }
 
     } else if (action == ACTION_R) { // Smaže prázdný adresář ADR (ADR je plná cesta ve virtuální FAT)
 
@@ -92,7 +101,7 @@ int main (int argc, char *argv[]) {
             auto rootDirectory = fat.findFirstCluster(filePath);
             fat.printFileContent(rootDirectory);
         } catch (const std::runtime_error &ex) {
-            std::cout << PATH_NOT_FOUND << std::endl;
+            std::cout << ex.what() << std::endl;
         }
     } else if (action == ACTION_P) { // Vypíše obsah adresáře ve formátu +adresář, +podadresář cluster, ukončeno --, - soubor první_cluster počet_clusterů. Jeden záznam jeden řádek. Podadresáře odsazeny o /t:
 

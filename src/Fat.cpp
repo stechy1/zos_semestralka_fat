@@ -393,10 +393,14 @@ std::shared_ptr<root_directory> Fat::findFirstCluster(const std::shared_ptr<root
         if (fileName == directoryName) { // Když najdu požadovaný soubor
             if (rootDirectory->file_type == FILE_TYPE_FILE) { // Jedná -li se o soubor, tak ho vrátím
                 return rootDirectory;
-            } else {
+            } else { // Jinak se zanořím rekurzivně o úroveň níž
                 return findFirstCluster(rootDirectory, loadDirectory(getClusterStartIndex(rootDirectory->first_cluster)), t_path.substr(separatorIndex + 1));
             }
         }
+    }
+
+    if (t_path.find(PATH_SEPARATOR) != std::string::npos && !fileName.empty()) {
+        throw std::runtime_error("File not found");
     }
 
     return t_Parent;
