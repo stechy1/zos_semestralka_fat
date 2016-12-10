@@ -32,13 +32,12 @@ const unsigned int FAT_TYPE = 12; // == FAT12, je možné i FAT32...
 const unsigned int CLUSTER_SIZE = 128;
 const unsigned int RESERVER_CLUSTER_COUNT = 10;
 const long ROOT_DIRECTORY_MAX_ENTRIES_COUNT = 3;
-const unsigned int FAT_SIZE = static_cast<unsigned int>(pow(2, FAT_TYPE));//2^FAT_TYPE;
+const unsigned int FAT_SIZE = 1 << FAT_TYPE;
 const unsigned int CLUSTER_COUNT = FAT_SIZE - RESERVER_CLUSTER_COUNT;
 // Oddělovač
 const std::string PATH_SEPARATOR = "/";
 
 // File typy
-const short FILE_TYPE_UNUSED = 0;
 const short FILE_TYPE_FILE = 1;
 const short FILE_TYPE_DIRECTORY = 2;
 
@@ -79,6 +78,7 @@ public:
     std::vector<unsigned int> getClusters(std::shared_ptr<root_directory> t_fileEntry);
     void createDirectory(const std::string &t_path, const std::string &t_addr);
     void createEmptyFat();
+    void insertFile(const std::string &t_filePath, const std::string &t_pseudoPath);
 
     void save();
 
@@ -98,18 +98,19 @@ private:
     unsigned int **m_fatTables;
 
     long m_FatStartIndex = 0;
-    long m_RootDirectoryStartIndex = 0;
     long m_ClustersStartIndex = 0;
 
     void loadBootRecord();
     void loadFatTable();
-    std::vector<std::shared_ptr<root_directory>> loadDirectory(long t_offset);
+    std::vector<std::shared_ptr<root_directory>> loadDirectory(unsigned int t_offset);
 
     void saveBootRecord();
     void saveFatTables();
     void saveFatPiece(long offset, unsigned int value);
     void saveRootDirectory();
-    void saveClusterWithFiles(std::vector<std::shared_ptr<root_directory>> t_RootDirectory, long offset);
+    void saveClusterWithFiles(std::vector<std::shared_ptr<root_directory>> t_RootDirectory, unsigned int offset);
+
+    void setFatPiece(long offset, unsigned int value);
 
     std::shared_ptr<root_directory> makeFile(std::string &&fileName, std::string &&fileMod, long fileSize, short fileType,
                                              unsigned int firstCluster);
@@ -117,10 +118,11 @@ private:
     std::shared_ptr<root_directory> findFirstCluster(const std::shared_ptr<root_directory> &t_Parent,
             const std::vector<std::shared_ptr<root_directory>> &t_RootDirectory, const std::string &t_path);
 
-    const long getFatStartIndex();
-    const long getRootDirectoryStartIndex();
-    const long getClustersStartIndex();
-    const long getClusterStartIndex(unsigned int offset);
+    void writeFile(FILE *t_File, std::shared_ptr<root_directory> t_FileEntry);
+
+    const unsigned int getFatStartIndex();
+    const unsigned int getClustersStartIndex();
+    const unsigned int getClusterStartIndex(unsigned int offset);
     const unsigned int getFreeCluster();
 
 

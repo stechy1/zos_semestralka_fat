@@ -50,7 +50,17 @@ int main (int argc, char *argv[]) {
     std::string action(argv[2]);
 
     if (action == ACTION_A) {        // Nahraje soubor z adresáře do cesty virtuální FAT tabulky
+        Fat fat(fileName);
+        fat.loadFat();
 
+        std::string filePath = argv[3];
+        std::string pseudoPath = argv[4];
+
+        try {
+            fat.insertFile(filePath, pseudoPath);
+        } catch (std::exception &ex) {
+
+        }
     } else if (action == ACTION_F) { // Smaže soubor s1 z vaseFAT.dat (s1 je plná cesta ve virtuální FAT)
 
     } else if (action == ACTION_C) { // Vypíše čísla clusterů, oddělené dvojtečkou, obsahující data souboru s1 (s1 je plná cesta ve virtuální FAT)
@@ -71,7 +81,6 @@ int main (int argc, char *argv[]) {
         std::string addr = argv[4];
 
         fat.createDirectory(addrPath, addr);
-        fat.save();
 
     } else if (action == ACTION_R) { // Smaže prázdný adresář ADR (ADR je plná cesta ve virtuální FAT)
 

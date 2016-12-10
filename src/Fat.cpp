@@ -22,9 +22,9 @@
 
 
 Fat::Fat(std::string &t_filePath) : m_FilePath(t_filePath) {
-    m_FatFile = fopen(m_FilePath.c_str(), "r+");
+    m_FatFile = std::fopen(m_FilePath.c_str(), "r+");
     if (m_FatFile == 0) {
-        m_FatFile = fopen(m_FilePath.c_str(), "w+");
+        m_FatFile = std::fopen(m_FilePath.c_str(), "w+");
     }
 }
 
@@ -36,7 +36,7 @@ Fat::~Fat() {
 
     delete[] m_fatTables;
 
-    fclose(m_FatFile);
+    std::fclose(m_FatFile);
 }
 
 
@@ -45,9 +45,9 @@ Fat::~Fat() {
 // Načte fatku ze souboru
 void Fat::loadFat() {
     loadBootRecord();
-    m_RootFile = makeFile("/", "", 0, FILE_TYPE_DIRECTORY, static_cast<unsigned int>(getRootDirectoryStartIndex()));
+    m_RootFile = makeFile("/", "", 0, FILE_TYPE_DIRECTORY, 0);
     loadFatTable();
-    m_RootDirectories = loadDirectory(getRootDirectoryStartIndex());
+    m_RootDirectories = loadDirectory(0);
 }
 
 std::shared_ptr<root_directory> Fat::findFirstCluster(const std::string &t_path) {
@@ -68,26 +68,6 @@ std::vector<unsigned int> Fat::getClusters(std::shared_ptr<root_directory> t_fil
     } while (!isEOF);
 
     return clusters;
-}
-
-void Fat::createDirectory(const std::string &t_path, const std::string &t_addr) {
-    auto parentDirectory = findFirstCluster(t_path);
-    auto root_dir = makeFile(std::string(t_addr), std::string("rwxrwxrwx"), m_BootRecord->cluster_size, FILE_TYPE_DIRECTORY, getFreeCluster());
-
-    std::vector<std::shared_ptr<root_directory>> parentDirectoryContent = loadDirectory(parentDirectory->first_cluster);
-
-    if (parentDirectoryContent.size() >= m_BootRecord->root_directory_max_entries_count) {
-        throw std::runtime_error("Can not create file, folder is full");
-    }
-
-    parentDirectoryContent.push_back(root_dir);
-    saveClusterWithFiles(parentDirectoryContent, parentDirectory->first_cluster);
-
-    for (int i = 0; i < m_BootRecord->fat_copies; ++i) {
-        m_fatTables[i][root_dir->first_cluster] = FILE_TYPE_DIRECTORY;
-    }
-    saveFatPiece(root_dir->first_cluster, FILE_TYPE_DIRECTORY);
-
 }
 
 void Fat::createEmptyFat() {
@@ -111,8 +91,50 @@ void Fat::createEmptyFat() {
         }
     }
 
+    setFatPiece(0, FAT_FILE_END);
+
     std::fseek(m_FatFile, getClusterStartIndex(m_BootRecord->cluster_count) + m_BootRecord->cluster_size - 1, SEEK_SET);
     std::fputc('\0', m_FatFile);
+}
+
+void Fat::createDirectory(const std::string &t_path, const std::string &t_addr) {
+    auto parentDirectory = findFirstCluster(t_path);
+    auto root_dir = makeFile(std::string(t_addr), std::string("rwxrwxrwx"), m_BootRecord->cluster_size, FILE_TYPE_DIRECTORY, getFreeCluster());
+
+    std::vector<std::shared_ptr<root_directory>> parentDirectoryContent = loadDirectory(parentDirectory->first_cluster);
+
+    if (parentDirectoryContent.size() >= m_BootRecord->root_directory_max_entries_count) {
+        throw std::runtime_error("Can not create file, folder is full");
+    }
+
+    parentDirectoryContent.push_back(root_dir);
+    saveClusterWithFiles(parentDirectoryContent, parentDirectory->first_cluster);
+
+    setFatPiece(root_dir->first_cluster, FILE_TYPE_DIRECTORY);
+    saveFatPiece(root_dir->first_cluster, FILE_TYPE_DIRECTORY);
+}
+
+void Fat::insertFile(const std::string &t_filePath, const std::string &t_pseudoPath) {
+    FILE *workingFile = std::fopen(t_filePath.c_str(), "r");
+    auto parentDirectory = findFirstCluster(t_pseudoPath);
+    auto separatorIndex = t_pseudoPath.find_last_of(PATH_SEPARATOR);
+    auto parentDirectoryContent = loadDirectory(parentDirectory->first_cluster);
+
+    std::fseek(workingFile, 0L, SEEK_END);
+
+    auto fileSize = std::ftell(workingFile);
+    auto file = makeFile(t_pseudoPath.substr(separatorIndex + 1), "rwxrwxrwx", fileSize, FILE_TYPE_FILE, getFreeCluster());
+
+    if (parentDirectoryContent.size() >= m_BootRecord->root_directory_max_entries_count) {
+        throw std::runtime_error("Can not create file, folder is full");
+    }
+
+    parentDirectoryContent.push_back(file);
+    saveClusterWithFiles(parentDirectoryContent, parentDirectory->first_cluster);
+
+    writeFile(workingFile, file);
+
+    std::fclose(workingFile);
 }
 
 void Fat::save() {
@@ -174,11 +196,10 @@ void Fat::printClustersContent() {
     std::memset(p_cluster, '\0', sizeof(p_cluster));
     std::fseek(m_FatFile, static_cast<int>(getClustersStartIndex()), SEEK_SET);
 
-    for (int i = 0; i < m_BootRecord->cluster_count; ++i) {
+    for (int i = 1; i < m_BootRecord->cluster_count; ++i) {
         std::fread(p_cluster, sizeof(char) * m_BootRecord->cluster_size, 1, m_FatFile);
 
         if (p_cluster[0] == '\0') {
-            //printf("Cluster %d: skip\n", i);
             continue;
         }
 
@@ -240,24 +261,21 @@ void Fat::loadFatTable() {
 }
 
 // Načte root directory
-std::vector<std::shared_ptr<root_directory>> Fat::loadDirectory(long t_offset) {
+std::vector<std::shared_ptr<root_directory>> Fat::loadDirectory(unsigned int t_offset) {
     assert(m_BootRecord != nullptr);
 
-    std::fseek(m_FatFile, t_offset, SEEK_SET);
+    std::fseek(m_FatFile, getClusterStartIndex(t_offset), SEEK_SET);
     auto rootDirectory = std::vector<std::shared_ptr<root_directory>>();
 
     for (int i = 0; i < m_BootRecord->root_directory_max_entries_count; i++) {
         auto file = std::make_shared<root_directory>();
         char x[sizeof(root_directory)];
+        std::memset(&x, '\0', sizeof(root_directory));
         std::fread(&x, sizeof(root_directory), 1, m_FatFile);
         std::memcpy(&(*file), &x, sizeof(root_directory));
         if(x[0] != '\0') {
             rootDirectory.push_back(file);
         }
-        //auto readed = std::fread(&(*file), sizeof(root_directory), 1, m_FatFile);
-//        if (readed > 1) {
-//            rootDirectory.push_back(file);
-//        }
     }
 
     return rootDirectory;
@@ -295,7 +313,8 @@ void Fat::saveFatPiece(long offset, unsigned int value) {
 
     for (int i = 0; i < m_BootRecord->fat_copies; ++i) {
         std::fseek(m_FatFile,
-                   i * m_BootRecord->cluster_count * sizeof(unsigned int) // Offset podle kopie fat tabulek
+                   getFatStartIndex()
+                   + i * m_BootRecord->cluster_count * sizeof(unsigned int) // Offset podle kopie fat tabulek
                    + offset * sizeof(unsigned int), // Offset v jedné fatce
                    SEEK_SET);
         std::fwrite(&value, sizeof(unsigned int), 1, m_FatFile);
@@ -307,18 +326,36 @@ void Fat::saveRootDirectory() {
     assert(m_FatFile != nullptr);
     assert(m_BootRecord != nullptr);
 
-    saveClusterWithFiles(m_RootDirectories, getRootDirectoryStartIndex());
+    saveClusterWithFiles(m_RootDirectories, 0);
 }
 
 // Uloží změnu v jednom clusteru se soubory
-void Fat::saveClusterWithFiles(std::vector<std::shared_ptr<root_directory>> t_RootDirectory, long offset) {
+void Fat::saveClusterWithFiles(std::vector<std::shared_ptr<root_directory>> t_RootDirectory, unsigned int offset) {
     assert(m_FatFile != nullptr);
     assert(m_BootRecord != nullptr);
 
-    std::fseek(m_FatFile, offset, SEEK_SET);
+    std::fseek(m_FatFile, getClusterStartIndex(offset), SEEK_SET);
 
     for (auto rootDirectory : t_RootDirectory) {
         std::fwrite(&(*rootDirectory), sizeof(root_directory), 1, m_FatFile);
+    }
+
+    auto remaing = m_BootRecord->root_directory_max_entries_count - t_RootDirectory.size();
+    if (remaing > 0) {
+        auto savedSize = sizeof(root_directory) * t_RootDirectory.size(); // Velikost paměti, která už je uložená
+        auto needSize = m_BootRecord->cluster_size - savedSize;
+
+        char tmp[needSize];
+        std::memset(&tmp, '\0', sizeof(tmp));
+        std::fseek(m_FatFile, savedSize, SEEK_CUR);
+        std::fwrite(&tmp, needSize, 1, m_FatFile);
+    }
+}
+
+// Nastaví záznam v fat tabulce a jeji kopiích
+void Fat::setFatPiece(long offset, unsigned int value) {
+    for (int i = 0; i < m_BootRecord->fat_copies; ++i) {
+        m_fatTables[i][offset] = value;
     }
 }
 
@@ -357,7 +394,7 @@ std::shared_ptr<root_directory> Fat::findFirstCluster(const std::shared_ptr<root
             if (rootDirectory->file_type == FILE_TYPE_FILE) { // Jedná -li se o soubor, tak ho vrátím
                 return rootDirectory;
             } else {
-                return findFirstCluster(rootDirectory, loadDirectory(getClusterStartIndex(1)), t_path.substr(separatorIndex + 1, t_path.size()));
+                return findFirstCluster(rootDirectory, loadDirectory(getClusterStartIndex(rootDirectory->first_cluster)), t_path.substr(separatorIndex + 1));
             }
         }
     }
@@ -365,37 +402,56 @@ std::shared_ptr<root_directory> Fat::findFirstCluster(const std::shared_ptr<root
     return t_Parent;
 }
 
+void Fat::writeFile(FILE *t_File, std::shared_ptr<root_directory> t_FileEntry) {
+    std::fseek(t_File, 0, SEEK_SET);
+    auto fileSize = t_FileEntry->file_size;
+    auto remaining = fileSize;
+    auto workingCluster = t_FileEntry->first_cluster;
+    auto clusterSize = m_BootRecord->cluster_size;
+    char tmp[clusterSize];
+
+    while (remaining > 0) {
+        auto realReadSize = remaining > clusterSize ? clusterSize : remaining;
+        std::memset(&tmp, '\0', clusterSize);
+        std::fseek(t_File, fileSize - remaining, SEEK_SET);
+        std::fread(&tmp, static_cast<unsigned int>(realReadSize), 1, t_File);
+        std::fseek(m_FatFile, getClusterStartIndex(workingCluster), SEEK_SET);
+        std::fwrite(&tmp, clusterSize, 1, m_FatFile);
+
+        remaining -= clusterSize;
+        std::cout << "Zapisuji na cluster cislo: " << workingCluster << ": " << tmp << std::endl;
+
+        setFatPiece(workingCluster, FAT_FILE_END);
+        if (remaining > 0) {
+            auto newClusterIndex = getFreeCluster();
+            setFatPiece(workingCluster, newClusterIndex);
+            workingCluster = newClusterIndex;
+        }
+    }
+
+    saveFatTables();
+}
 
 // Vrátí index, kde začíná definice fat tabulky
-const long Fat::getFatStartIndex() {
+const unsigned int Fat::getFatStartIndex() {
     if (m_FatStartIndex == 0) {
         m_FatStartIndex = sizeof(boot_record);
     }
 
-    return m_FatStartIndex;
-}
-
-// Vrátí index, kde začíná definice root directory
-const long Fat::getRootDirectoryStartIndex() {
-    if (m_RootDirectoryStartIndex == 0) {
-        m_RootDirectoryStartIndex = getFatStartIndex()
-                                    + ((sizeof(unsigned int)) * m_BootRecord->cluster_count) * m_BootRecord->fat_copies;
-    }
-
-    return m_RootDirectoryStartIndex;
+    return static_cast<unsigned int>(m_FatStartIndex);
 }
 
 // Vrátí index, kde začínají clustry
-const long Fat::getClustersStartIndex() {
+const unsigned int Fat::getClustersStartIndex() {
     if (m_ClustersStartIndex == 0) {
-        m_ClustersStartIndex = getRootDirectoryStartIndex()
-                               + (sizeof(root_directory)) * m_BootRecord->root_directory_max_entries_count;
+        m_ClustersStartIndex = getFatStartIndex()
+                               + ((sizeof(unsigned int)) * m_BootRecord->cluster_count) * m_BootRecord->fat_copies;
     }
-    return m_ClustersStartIndex;
+    return static_cast<unsigned int>(m_ClustersStartIndex);
 }
 
 // Vrátí index, kde začíná obsah požadovaného clusteru
-const long Fat::getClusterStartIndex(unsigned int offset) {
+const unsigned int Fat::getClusterStartIndex(unsigned int offset) {
     return getClustersStartIndex() + offset * m_BootRecord->cluster_size;
 }
 
@@ -408,4 +464,6 @@ const unsigned int Fat::getFreeCluster() {
 
     throw std::runtime_error("Not enough space.");
 }
+
+
 
