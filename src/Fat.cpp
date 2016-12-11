@@ -59,13 +59,21 @@ std::vector<unsigned int> Fat::getClusters(std::shared_ptr<root_directory> t_fil
     assert(m_fatTables[0] != nullptr);
 
     auto clusters = std::vector<unsigned int>();
+    auto clusterSize = m_BootRecord->cluster_size;
+    auto fileSize = t_fileEntry->file_size;
+    auto iterationCount = fileSize % clusterSize;
     auto workingCluster = t_fileEntry->first_cluster;
     bool isEOF;
+    auto count = 0;
 
     do {
+        if (count > iterationCount) {
+            throw std::runtime_error("Inconsistent fat table");
+        }
         clusters.push_back(workingCluster);
         workingCluster = m_fatTables[0][workingCluster];
         isEOF = workingCluster == FAT_FILE_END;
+        count++;
     } while (!isEOF);
 
     return clusters;
@@ -300,23 +308,28 @@ void Fat::printFileContent(std::shared_ptr<root_directory> t_rootDirectory) {
     assert(m_FatFile != nullptr);
     assert(m_BootRecord != nullptr);
 
-    auto *p_cluster = new char[m_BootRecord->cluster_size];
+    auto clusterSize = m_BootRecord->cluster_size;
+    char p_cluster[clusterSize];
     std::memset(p_cluster, '\0', sizeof(p_cluster));
     auto workingCluster = t_rootDirectory->first_cluster;
+    auto fileSize = t_rootDirectory->file_size;
+    auto iterationCount = fileSize % clusterSize;
+    auto count = 0;
 
     for(;;) {
+        if (count > iterationCount) {
+            throw std::runtime_error("Inconsistent fat table");
+        }
         std::fseek(&(*m_FatFile), getClusterStartIndex(workingCluster), SEEK_SET);
-        std::fread(p_cluster, sizeof(char) * m_BootRecord->cluster_size, 1, m_FatFile);
+        std::fread(&p_cluster, clusterSize, 1, m_FatFile);
         int cluster = workingCluster;
         if (workingCluster == FAT_FILE_END) {
             break;
         }
         workingCluster = m_fatTables[0][workingCluster];
         printf("Cluster %d: %s\n", cluster, p_cluster);
-
+        count++;
     }
-
-    delete[] p_cluster;
 }
 
 // Vypíše stromovou strukturu od zadaného adresáře
