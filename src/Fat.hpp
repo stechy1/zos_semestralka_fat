@@ -79,9 +79,11 @@ public:
     std::shared_ptr<root_directory> findFirstCluster(const std::string &t_path);
     std::vector<unsigned int> getClusters(std::shared_ptr<root_directory> t_fileEntry);
     void tree();
-    void createDirectory(const std::string &t_path, const std::string &t_addr);
     void createEmptyFat();
+    void createDirectory(const std::string &t_path, const std::string &t_addr);
+    void deleteDirectory(const std::string &t_pseudoPath);
     void insertFile(const std::string &t_filePath, const std::string &t_pseudoPath);
+    void deleteFile(const std::string &t_pseudoPath);
 
     void save();
 
@@ -115,6 +117,7 @@ private:
     void saveClusterWithFiles(std::vector<std::shared_ptr<root_directory>> t_RootDirectory, unsigned int offset);
 
     void setFatPiece(long offset, unsigned int value);
+    void clearFatRecord(long offset);
 
     std::shared_ptr<root_directory> makeFile(const std::string &fileName, const std::string &fileMod, long fileSize, short fileType,
                                              unsigned int firstCluster);

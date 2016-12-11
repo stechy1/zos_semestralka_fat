@@ -101,7 +101,16 @@ int main (int argc, char *argv[]) {
         }
 
     } else if (action == ACTION_R) { // Smaže prázdný adresář ADR (ADR je plná cesta ve virtuální FAT)
+        Fat fat(fileName);
+        fat.loadFat();
 
+        std::string pseudoPath = argv[3];
+
+        try {
+            fat.deleteDirectory(pseudoPath);
+        } catch (std::exception &ex) {
+            std::cout << ex.what() << std::endl;
+        }
     } else if (action == ACTION_L) { // Vypíše obsah souboru s1 na obrazovku (s1 je plná cesta ve virtuální FAT)
         Fat fat(fileName);
         fat.loadFat();
