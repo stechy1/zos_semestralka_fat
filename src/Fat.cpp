@@ -18,6 +18,7 @@
 #include <exception>
 #include <assert.h>
 #include <iostream>
+#include <stack>
 #include "Fat.hpp"
 
 
@@ -70,6 +71,17 @@ std::vector<unsigned int> Fat::getClusters(std::shared_ptr<root_directory> t_fil
     return clusters;
 }
 
+void Fat::tree() {
+    assert(m_BootRecord != nullptr);
+    assert(m_FatFile != nullptr);
+
+    printf("+%s\n", m_RootFile->file_name);
+
+    for (auto &fileEntry : m_RootDirectories) {
+        printTree(fileEntry, SPACE_SIZE);
+    }
+}
+
 void Fat::createEmptyFat() {
     m_BootRecord = std::make_unique<boot_record>();
     memset(m_BootRecord->signature, '\0', sizeof(m_BootRecord->signature));
@@ -99,7 +111,7 @@ void Fat::createEmptyFat() {
 
 void Fat::createDirectory(const std::string &t_path, const std::string &t_addr) {
     auto parentDirectory = findFirstCluster(t_path);
-    auto root_dir = makeFile(std::string(t_addr), std::string("rwxrwxrwx"), m_BootRecord->cluster_size, FILE_TYPE_DIRECTORY, getFreeCluster());
+    auto root_dir = makeFile(t_addr, "rwxrwxrwx", m_BootRecord->cluster_size, FILE_TYPE_DIRECTORY, getFreeCluster());
 
     std::vector<std::shared_ptr<root_directory>> parentDirectoryContent = loadDirectory(parentDirectory->first_cluster);
 
@@ -110,20 +122,22 @@ void Fat::createDirectory(const std::string &t_path, const std::string &t_addr) 
     parentDirectoryContent.push_back(root_dir);
     saveClusterWithFiles(parentDirectoryContent, parentDirectory->first_cluster);
 
-    setFatPiece(root_dir->first_cluster, FILE_TYPE_DIRECTORY);
-    saveFatPiece(root_dir->first_cluster, FILE_TYPE_DIRECTORY);
+    setFatPiece(root_dir->first_cluster, FAT_DIRECTORY_CONTENT);
+    saveFatPiece(root_dir->first_cluster, FAT_DIRECTORY_CONTENT);
 }
 
 void Fat::insertFile(const std::string &t_filePath, const std::string &t_pseudoPath) {
     FILE *workingFile = std::fopen(t_filePath.c_str(), "r");
-    auto parentDirectory = findFirstCluster(t_pseudoPath);
     auto separatorIndex = t_pseudoPath.find_last_of(PATH_SEPARATOR);
+    auto realPseudoPath = t_pseudoPath.substr(0, separatorIndex);
+    auto parentDirectory = findFirstCluster(realPseudoPath);
     auto parentDirectoryContent = loadDirectory(parentDirectory->first_cluster);
+    auto fileName = t_pseudoPath.substr(separatorIndex + 1);
 
     std::fseek(workingFile, 0L, SEEK_END);
 
     auto fileSize = std::ftell(workingFile);
-    auto file = makeFile(t_pseudoPath.substr(separatorIndex + 1), "rwxrwxrwx", fileSize, FILE_TYPE_FILE, getFreeCluster());
+    auto file = makeFile(fileName, "rwxrwxrwx", fileSize, FILE_TYPE_FILE, getFreeCluster());
 
     if (parentDirectoryContent.size() >= m_BootRecord->root_directory_max_entries_count) {
         throw std::runtime_error("Can not create file, folder is full");
@@ -195,9 +209,14 @@ void Fat::printClustersContent() {
     auto *p_cluster = new char[m_BootRecord->cluster_size];
     std::memset(p_cluster, '\0', sizeof(p_cluster));
     std::fseek(m_FatFile, static_cast<int>(getClustersStartIndex()), SEEK_SET);
+    unsigned int *fatTable = m_fatTables[0];
 
     for (int i = 1; i < m_BootRecord->cluster_count; ++i) {
         std::fread(p_cluster, sizeof(char) * m_BootRecord->cluster_size, 1, m_FatFile);
+
+        if (fatTable[i] == FAT_BAD_CLUSTER || fatTable[i] == FAT_UNUSED || fatTable[i] == FAT_DIRECTORY_CONTENT) {
+            continue;
+        }
 
         if (p_cluster[0] == '\0') {
             continue;
@@ -230,6 +249,21 @@ void Fat::printFileContent(std::shared_ptr<root_directory> t_rootDirectory) {
 
     delete[] p_cluster;
 }
+
+// Vypíše stromovou strukturu od zadaného adresáře
+void Fat::printTree(std::shared_ptr<root_directory> t_RootDirectory, unsigned int depth) {
+    bool isDirectory = t_RootDirectory->file_type == FILE_TYPE_DIRECTORY;
+    printf("%*s%s\n", depth, isDirectory ? "+" : "-", t_RootDirectory->file_name); // vypíše tabulátor podle aktuálního zanoření a "+" - directory, jinak "-"
+
+    if (isDirectory) {
+        auto directoryContent = loadDirectory(t_RootDirectory->first_cluster);
+        auto nextDepth = depth + SPACE_SIZE;
+        for (auto &fileEntry : directoryContent) {
+            printTree(fileEntry, nextDepth);
+        }
+    }
+}
+
 
 // Private methods
 
@@ -361,7 +395,7 @@ void Fat::setFatPiece(long offset, unsigned int value) {
 
 // Vytvoří nový soubor
 std::shared_ptr<root_directory>
-Fat::makeFile(std::string &&fileName, std::string &&fileMod, long fileSize, short fileType, unsigned int firstCluster) {
+Fat::makeFile(const std::string &fileName, const std::string &fileMod, long fileSize, short fileType, unsigned int firstCluster) {
     auto file = std::make_shared<root_directory>();
 
     memset(file->file_mod, '\0', sizeof(file->file_mod));
@@ -381,16 +415,22 @@ std::shared_ptr<root_directory> Fat::findFirstCluster(const std::shared_ptr<root
         const std::vector<std::shared_ptr<root_directory>> &t_RootDirectory, const std::string &t_path) {
     auto separatorIndex = t_path.find(PATH_SEPARATOR);
     std::string fileName;
+    std::string wantedFileName;
 
     if (separatorIndex == std::string::npos) {
         fileName = t_path;
     } else {
         fileName = t_path.substr(separatorIndex + 1);
     }
+    wantedFileName = fileName;
 
+    auto nextSeparator = fileName.find(PATH_SEPARATOR);
+    if (nextSeparator != std::string::npos) {
+        wantedFileName = fileName.substr(0, nextSeparator);
+    }
     for (auto &rootDirectory : t_RootDirectory) {
         std::string directoryName = rootDirectory->file_name;
-        if (fileName == directoryName) { // Když najdu požadovaný soubor
+        if (wantedFileName.compare(directoryName) == 0) { // Když najdu požadovaný soubor
             if (rootDirectory->file_type == FILE_TYPE_FILE) { // Jedná -li se o soubor, tak ho vrátím
                 return rootDirectory;
             } else { // Jinak se zanořím rekurzivně o úroveň níž
@@ -468,6 +508,10 @@ const unsigned int Fat::getFreeCluster() {
 
     throw std::runtime_error("Not enough space.");
 }
+
+
+
+
 
 
 

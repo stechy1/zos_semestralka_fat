@@ -25,6 +25,7 @@
 const int FAT_UNUSED = 65535;
 const int FAT_FILE_END = 65534;
 const int FAT_BAD_CLUSTER = 65533;
+const int FAT_DIRECTORY_CONTENT = 65532;
 
 // Definice vlastnosti boot recordu
 const unsigned int FAT_COPIES = 2;
@@ -36,6 +37,7 @@ const unsigned int FAT_SIZE = 1 << FAT_TYPE;
 const unsigned int CLUSTER_COUNT = FAT_SIZE - RESERVER_CLUSTER_COUNT;
 // Oddělovač
 const std::string PATH_SEPARATOR = "/";
+const unsigned short SPACE_SIZE = 4;
 
 // File typy
 const short FILE_TYPE_FILE = 1;
@@ -76,6 +78,7 @@ public:
     void loadFat();
     std::shared_ptr<root_directory> findFirstCluster(const std::string &t_path);
     std::vector<unsigned int> getClusters(std::shared_ptr<root_directory> t_fileEntry);
+    void tree();
     void createDirectory(const std::string &t_path, const std::string &t_addr);
     void createEmptyFat();
     void insertFile(const std::string &t_filePath, const std::string &t_pseudoPath);
@@ -88,6 +91,7 @@ public:
     void printRootDirectory(std::shared_ptr<root_directory> t_rootDirectory);
     void printClustersContent();
     void printFileContent(std::shared_ptr<root_directory> t_rootDirectory);
+    void printTree(std::shared_ptr<root_directory> t_RootDirectory, unsigned int depth);
 
 private:
     std::string m_FilePath = "";
@@ -112,7 +116,7 @@ private:
 
     void setFatPiece(long offset, unsigned int value);
 
-    std::shared_ptr<root_directory> makeFile(std::string &&fileName, std::string &&fileMod, long fileSize, short fileType,
+    std::shared_ptr<root_directory> makeFile(const std::string &fileName, const std::string &fileMod, long fileSize, short fileType,
                                              unsigned int firstCluster);
 
     std::shared_ptr<root_directory> findFirstCluster(const std::shared_ptr<root_directory> &t_Parent,

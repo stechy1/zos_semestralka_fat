@@ -62,7 +62,16 @@ int main (int argc, char *argv[]) {
             std::cout << ex.what() << std::endl;
         }
     } else if (action == ACTION_F) { // Smaže soubor s1 z vaseFAT.dat (s1 je plná cesta ve virtuální FAT)
+        Fat fat(fileName);
+        fat.loadFat();
 
+        std::string pseudoPath = argv[3];
+
+         try {
+             fat.deleteFile(pseudoPath);
+         } catch (std::exception &ex) {
+             std::cout << ex.what() << std::endl;
+         }
     } else if (action == ACTION_C) { // Vypíše čísla clusterů, oddělené dvojtečkou, obsahující data souboru s1 (s1 je plná cesta ve virtuální FAT)
         Fat fat(fileName);
         fat.loadFat();
@@ -104,7 +113,9 @@ int main (int argc, char *argv[]) {
             std::cout << ex.what() << std::endl;
         }
     } else if (action == ACTION_P) { // Vypíše obsah adresáře ve formátu +adresář, +podadresář cluster, ukončeno --, - soubor první_cluster počet_clusterů. Jeden záznam jeden řádek. Podadresáře odsazeny o /t:
-
+        Fat fat(fileName);
+        fat.loadFat();
+        fat.tree();
     } else if (action == ACTION_N) { // Vytvoří novou čistou fatku
         Fat fat(fileName);
         fat.createEmptyFat();
