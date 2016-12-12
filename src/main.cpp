@@ -78,7 +78,7 @@ int main (int argc, char *argv[]) {
 
         std::string filePath = argv[3];
         try {
-            auto rootDirectory = fat.findFirstCluster(filePath);
+            auto rootDirectory = fat.findFileDescriptor(filePath);
 
             auto clusters = fat.getClusters(rootDirectory);
 
@@ -116,7 +116,7 @@ int main (int argc, char *argv[]) {
         fat.loadFat();
         std::string filePath = argv[3];
         try {
-            auto rootDirectory = fat.findFirstCluster(filePath);
+            auto rootDirectory = fat.findFileDescriptor(filePath);
             fat.printFileContent(rootDirectory);
         } catch (const std::runtime_error &ex) {
             std::cout << ex.what() << std::endl;

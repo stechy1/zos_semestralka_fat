@@ -75,8 +75,9 @@ public:
 
     ~Fat();
 
+    // Uživatelské funkce
     void loadFat();
-    std::shared_ptr<root_directory> findFirstCluster(const std::string &t_path);
+    std::shared_ptr<root_directory> findFileDescriptor(const std::string &t_path);
     std::vector<unsigned int> getClusters(std::shared_ptr<root_directory> t_fileEntry);
     void tree();
     void createEmptyFat();
@@ -87,13 +88,13 @@ public:
 
     void save();
 
-    // Print methods
+    // Metody pro výpis informací
     void printBootRecord();
     void printRootDirectories();
     void printRootDirectory(std::shared_ptr<root_directory> t_rootDirectory);
     void printClustersContent();
     void printFileContent(std::shared_ptr<root_directory> t_rootDirectory);
-    void printTree(std::shared_ptr<root_directory> t_RootDirectory, unsigned int depth);
+    void printTree(std::shared_ptr<root_directory> t_rootDirectory, unsigned int t_depth);
 
 private:
     std::string m_FilePath = "";
@@ -106,30 +107,35 @@ private:
     long m_FatStartIndex = 0;
     long m_ClustersStartIndex = 0;
 
+    // Načítací metody
     void loadBootRecord();
     void loadFatTable();
     std::vector<std::shared_ptr<root_directory>> loadDirectory(unsigned int t_offset);
 
+    // Ukládací metody
     void saveBootRecord();
     void saveFatTables();
-    void saveFatPiece(long offset, unsigned int value);
+    void saveFatPiece(long t_offset, unsigned int t_value);
     void saveRootDirectory();
-    void saveClusterWithFiles(std::vector<std::shared_ptr<root_directory>> t_RootDirectory, unsigned int offset);
+    void saveClusterWithFiles(std::vector<std::shared_ptr<root_directory>> t_rootDirectory, unsigned int t_offset);
 
-    void setFatPiece(long offset, unsigned int value);
-    void clearFatRecord(long offset);
+    // Privátní výkonné metody (dělají nějakou prácí)
+    void setFatPiece(long t_offset, unsigned int t_value);
+    void clearFatRecord(long t_offset);
 
-    std::shared_ptr<root_directory> makeFile(const std::string &fileName, const std::string &fileMod, long fileSize, short fileType,
-                                             unsigned int firstCluster);
+    std::shared_ptr<root_directory> makeFile(const std::string &t_fileName, const std::string &t_fileMod, long t_fileSize, short t_fileType,
+                                             unsigned int t_firstCluster);
 
-    std::shared_ptr<root_directory> findFirstCluster(const std::shared_ptr<root_directory> &t_Parent,
-            const std::vector<std::shared_ptr<root_directory>> &t_RootDirectory, const std::string &t_path);
+    std::shared_ptr<root_directory> findFileDescriptor(const std::shared_ptr<root_directory> &t_parent,
+                                                       const std::vector<std::shared_ptr<root_directory>> &t_rootDirectory,
+                                                       const std::string &t_path);
 
-    void writeFile(FILE *t_File, std::shared_ptr<root_directory> t_FileEntry);
+    void writeFile(FILE *t_file, std::shared_ptr<root_directory> t_fileEntry);
 
+    // Pomocné metody pro získání offsetů
     const unsigned int getFatStartIndex();
     const unsigned int getClustersStartIndex();
-    const unsigned int getClusterStartIndex(unsigned int offset);
+    const unsigned int getClusterStartIndex(unsigned int t_offset);
     const unsigned int getFreeCluster();
 
 
