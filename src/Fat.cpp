@@ -69,7 +69,7 @@ std::vector<unsigned int> Fat::getClusters(std::shared_ptr<root_directory> t_fil
     auto count = 0;
 
     do {
-        if (count > maxIterationCount) { // Detekce zacyklení
+        if (count >= maxIterationCount && t_fileEntry->file_type != FILE_TYPE_DIRECTORY) { // Detekce zacyklení
             throw std::runtime_error("Inconsistent fat table");
         }
         clusters.push_back(workingCluster);
@@ -328,7 +328,7 @@ void Fat::printFileContent(std::shared_ptr<root_directory> t_rootDirectory) {
     auto count = 0;
 
     for (;;) {
-        if (count > maxIterationCount) { // Detekce zacyklení
+        if (count >= maxIterationCount && t_rootDirectory->file_type != FILE_TYPE_DIRECTORY) { // Detekce zacyklení
             throw std::runtime_error("Inconsistent fat table");
         }
         std::fseek(&(*m_FatFile), getClusterStartIndex(workingCluster), SEEK_SET);
@@ -348,31 +348,35 @@ void Fat::printTree(std::shared_ptr<root_directory> t_rootDirectory, unsigned in
     bool isDirectory = t_rootDirectory->file_type == FILE_TYPE_DIRECTORY;
     std::printf("%*s%s ", t_depth, isDirectory ? "+" : "-",
            t_rootDirectory->file_name); // vypíše tabulátor podle aktuálního zanoření a "+" - directory, jinak "-"
-
+    auto content = loadDirectory(t_rootDirectory->first_cluster);
     auto workingDirectory = t_rootDirectory->first_cluster;
     auto maxIterationCount = t_rootDirectory->file_size % m_BootRecord->cluster_size;
     int count = 0;
-    while (1) {
-        if (count > maxIterationCount) { // Detekce zacyklení
-            throw std::runtime_error("Inconsistent fat table");
-        }
+
+    if (isDirectory) { // Pokud se jedná o složku, tak maximální počet iterací = počet souborů ve složce
+        maxIterationCount = content.size();
+    }
+    while (1) { // Výpis clusterů
+        std::printf("%d", workingDirectory);
+        workingDirectory = m_fatTables[0][workingDirectory];
+        count++;
+
         if (workingDirectory == FAT_UNUSED
             || workingDirectory == FAT_BAD_CLUSTER
             || workingDirectory == FAT_DIRECTORY_CONTENT
             || workingDirectory == FAT_FILE_END) {
             break;
         }
-
-        std::printf("%d,", workingDirectory);
-        workingDirectory = m_fatTables[0][workingDirectory];
-        count++;
+        if (count > maxIterationCount) { // Detekce zacyklení
+            throw std::runtime_error("Inconsistent fat table");
+        }
+        std::printf(",");
     }
-    std::printf("\n");
+    std::printf("; Clusterů: %d\n", count);
 
     if (isDirectory) {
-        auto directoryContent = loadDirectory(t_rootDirectory->first_cluster);
         auto nextDepth = t_depth + SPACE_SIZE;
-        for (auto &fileEntry : directoryContent) {
+        for (auto &fileEntry : content) {
             printTree(fileEntry, nextDepth);
         }
     }
@@ -492,6 +496,9 @@ void Fat::saveClusterWithFiles(std::vector<std::shared_ptr<root_directory>> t_ro
     std::fseek(m_FatFile, clusterStartIndex, SEEK_SET);
 
     for (auto rootDirectory : t_rootDirectory) {
+        char x[sizeof(root_directory)];
+        std::memset(&x, '\0', sizeof(root_directory));
+        std::memcpy(&x, &(*rootDirectory), sizeof(root_directory));
         std::fwrite(&(*rootDirectory), sizeof(root_directory), 1, m_FatFile);
     }
 }
@@ -513,7 +520,7 @@ void Fat::clearFatRecord(long t_offset) {
             throw std::runtime_error("Fat is inconsistent");
         }
 
-        if (workingOffset == FAT_FILE_END || workingOffset == FAT_BAD_CLUSTER) {
+        if (workingOffset == FAT_FILE_END || workingOffset == FAT_BAD_CLUSTER || workingOffset == FAT_DIRECTORY_CONTENT) {
             break;
         }
 
@@ -598,7 +605,7 @@ void Fat::writeFile(FILE *t_file, std::shared_ptr<root_directory> t_fileEntry) {
         std::fwrite(&tmp, clusterSize, 1, m_FatFile);
 
         remaining -= clusterSize;
-        std::printf("Zapisuji na cluster cislo: %d: %s", workingCluster, tmp);
+        std::printf("Zapisuji na cluster cislo: %d: %s\n", workingCluster, tmp);
 
         setFatPiece(workingCluster, FAT_FILE_END); // Asi zbytečný
         if (remaining > 0) { // Pokud není konec souboru, nastavím novou hodnotu ve fat tabulce
