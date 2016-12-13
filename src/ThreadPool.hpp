@@ -86,9 +86,7 @@ public:
     template<typename T>
     class TaskFuture {
     public:
-        TaskFuture(std::future<T> &&future)
-                : m_future{std::move(future)} {
-        }
+        TaskFuture(std::future<T> &&future) : m_future{std::move(future)} {}
 
         TaskFuture(const TaskFuture &rhs) = delete;
 
@@ -98,13 +96,13 @@ public:
 
         TaskFuture &operator=(TaskFuture &&other) = default;
 
-        ~TaskFuture(void) {
+        ~TaskFuture() {
             if (m_future.valid()) {
                 m_future.get();
             }
         }
 
-        auto get(void) {
+        T get() {
             return m_future.get();
         }
 
@@ -114,20 +112,17 @@ public:
     };
 
 public:
-    ThreadPool()
-            : ThreadPool{std::max(std::thread::hardware_concurrency(), 2u) - 1u} {
+    ThreadPool() : ThreadPool{std::max(std::thread::hardware_concurrency(), 2u) - 1u} {
     }
 
-    explicit ThreadPool(const std::uint32_t numThreads)
-            : m_done{false},
+    explicit ThreadPool(const std::uint32_t numThreads) : m_done{false},
               m_workQueue{},
               m_threads{} {
         try {
             for (std::uint32_t i = 0u; i < numThreads; ++i) {
                 m_threads.emplace_back(std::thread(&ThreadPool::worker, this));
             }
-        }
-        catch (...) {
+        } catch (...) {
             destroy();
             throw;
         }
@@ -199,6 +194,5 @@ inline auto submitJob(Func &&func, Args &&... args) {
     return getThreadPool().submit(std::forward<Func>(func), std::forward<Args>(args)...);
 }
 }
-
 
 #endif
