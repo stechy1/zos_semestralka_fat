@@ -13,25 +13,38 @@
  * See the License for the specific language governing permissions and
  *         limitations under the License.
  */
- 
- #include <iostream>
+
+#include <iostream>
 
 #include "ThreadPool.hpp"
 
-void worker() {
+uint32_t worker(uint32_t index) {
     using namespace std::chrono_literals;
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 10; ++i) {
 
-        std::cout << i << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::cout << "Thread" << index << " status: " << i << std::endl;
     }
+
+    return index;
 }
 
-int main (int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
 
     ThreadPool threadPool(10);
 
-    for (int i = 0; i < 5; ++i) {
-        std::cout << "Nakladam mu praci" << std::endl;
-        threadPool.submit(worker);
+    std::vector<ThreadPool::TaskFuture<uint32_t >> v;
+    for (std::uint32_t i = 0u; i < 21u; ++i) {
+        v.push_back(threadPool.submit(worker, i));
     }
+
+    std::cout << "Jdu si vybrat odmenu" << std::endl;
+
+    for (auto &item: v) {
+        auto res = item.get();
+        std::cout << res << std::endl;
+    }
+
+    std::cout << "Koncim..." << std::endl;
+
 }

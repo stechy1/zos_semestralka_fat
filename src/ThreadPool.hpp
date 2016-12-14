@@ -157,7 +157,6 @@ private:
         while (!m_done) {
             std::unique_ptr<IThreadTask> pTask{nullptr};
             if (m_workQueue.waitPop(pTask)) {
-                std::cout << "Pracuji" << std::endl;
                 pTask->execute();
             }
         }
