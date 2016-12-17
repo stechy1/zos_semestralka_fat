@@ -21,6 +21,7 @@
 #include <vector>
 #include <memory>
 #include <cmath>
+#include <mutex>
 
 const int FAT_UNUSED = 65535;
 const int FAT_FILE_END = 65534;
@@ -30,7 +31,7 @@ const int FAT_DIRECTORY_CONTENT = 65532;
 // Definice vlastnosti boot recordu
 const unsigned int FAT_COPIES = 2;
 const unsigned int FAT_TYPE = 12; // == FAT12, je možné i FAT32...
-const unsigned int CLUSTER_SIZE = 128;
+const unsigned int CLUSTER_SIZE = 150;
 const unsigned int RESERVER_CLUSTER_COUNT = 10;
 const long ROOT_DIRECTORY_MAX_ENTRIES_COUNT = 3;
 const unsigned int FAT_SIZE = 1 << FAT_TYPE;
@@ -106,6 +107,11 @@ private:
 
     long m_FatStartIndex = 0;
     long m_ClustersStartIndex = 0;
+
+    mutable std::recursive_mutex m_recursive_mutex;
+
+    void openFile();
+    void closeFile();
 
     // Načítací metody
     void loadBootRecord();
