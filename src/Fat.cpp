@@ -677,7 +677,7 @@ void Fat::writeFile(FILE *t_file, std::shared_ptr<root_directory> t_fileEntry) {
 // Vrátí index, kde začíná definice fat tabulky
 const unsigned int Fat::getFatStartIndex() {
     if (m_FatStartIndex == 0) {
-        m_FatStartIndex = sizeof(boot_record) + 1;
+        m_FatStartIndex = sizeof(boot_record);
     }
 
     return static_cast<unsigned int>(m_FatStartIndex);
@@ -687,15 +687,14 @@ const unsigned int Fat::getFatStartIndex() {
 const unsigned int Fat::getClustersStartIndex() {
     if (m_ClustersStartIndex == 0) {
         m_ClustersStartIndex = getFatStartIndex()
-                               + ((sizeof(unsigned int)) * m_BootRecord->cluster_count) * m_BootRecord->fat_copies
-                               + 1;
+                               + ((sizeof(unsigned int)) * m_BootRecord->cluster_count) * m_BootRecord->fat_copies;
     }
     return static_cast<unsigned int>(m_ClustersStartIndex);
 }
 
 // Vrátí index, kde začíná obsah požadovaného clusteru
 const unsigned int Fat::getClusterStartIndex(unsigned int t_offset) {
-    return getClustersStartIndex() + t_offset * m_BootRecord->cluster_size + 1;
+    return getClustersStartIndex() + t_offset * m_BootRecord->cluster_size;
 }
 
 // Vrátí první voln cluster
