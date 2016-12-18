@@ -17,32 +17,10 @@
 #ifndef SEMESTRALKA_FAT_HPP
 #define SEMESTRALKA_FAT_HPP
 
-
 #include <vector>
 #include <memory>
 #include <cmath>
 #include <mutex>
-
-const int FAT_UNUSED = 65535;
-const int FAT_FILE_END = 65534;
-const int FAT_BAD_CLUSTER = 65533;
-const int FAT_DIRECTORY_CONTENT = 65532;
-
-// Definice vlastnosti boot recordu
-const unsigned int FAT_COPIES = 2;
-const unsigned int FAT_TYPE = 12; // == FAT12, je možné i FAT32...
-const unsigned int CLUSTER_SIZE = 150;
-const unsigned int RESERVER_CLUSTER_COUNT = 10;
-const long ROOT_DIRECTORY_MAX_ENTRIES_COUNT = 3;
-const unsigned int FAT_SIZE = 1 << FAT_TYPE;
-const unsigned int CLUSTER_COUNT = FAT_SIZE - RESERVER_CLUSTER_COUNT;
-// Oddělovač
-const std::string PATH_SEPARATOR = "/";
-const unsigned short SPACE_SIZE = 4;
-
-// File typy
-const short FILE_TYPE_FILE = 1;
-const short FILE_TYPE_DIRECTORY = 2;
 
 //struktura na boot record
 struct boot_record {
@@ -68,6 +46,31 @@ struct root_directory {
 class Fat {
 
 public:
+
+    static const int FAT_UNUSED = 65535;
+    static const int FAT_FILE_END = 65534;
+    static const int FAT_BAD_CLUSTER = 65533;
+    static const int FAT_DIRECTORY_CONTENT = 65532;
+
+    // Definice vlastnosti boot recordu
+    static const unsigned int FAT_COPIES = 2;
+    static const unsigned int FAT_TYPE = 12; // == FAT12, je možné i FAT32...
+    static const unsigned int CLUSTER_SIZE = 150;
+    static const unsigned int RESERVER_CLUSTER_COUNT = 10;
+    static const long ROOT_DIRECTORY_MAX_ENTRIES_COUNT = 3;
+    static const unsigned int FAT_SIZE = 1 << FAT_TYPE;
+    static const unsigned int CLUSTER_COUNT = FAT_SIZE - RESERVER_CLUSTER_COUNT;
+    // Oddělovač
+    const std::string PATH_SEPARATOR = "/";
+    static const unsigned short SPACE_SIZE = 4;
+
+    // File typy
+    static const short FILE_TYPE_FILE = 1;
+    static const short FILE_TYPE_DIRECTORY = 2;
+
+    friend class Defragmenter;
+
+
     Fat(std::string &t_filePath);
     Fat(const Fat &other) = delete;
     Fat& operator=(const Fat& other) = delete;

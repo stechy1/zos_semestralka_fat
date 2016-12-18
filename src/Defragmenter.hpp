@@ -20,6 +20,12 @@
 
 #include "Fat.hpp"
 
+struct file_entry {
+    std::shared_ptr<file_entry> parent;
+    std::shared_ptr<root_directory> me;
+    std::vector<std::shared_ptr<file_entry>> children;
+};
+
 class Defragmenter {
     
 public:
@@ -29,12 +35,21 @@ public:
     Defragmenter(Defragmenter &&other) = delete;
     Defragmenter& operator=(Defragmenter&& other) = delete;
 
+    virtual ~Defragmenter();
+
     void runDefragmentation();
 
     void printTree();
 
 private:
     Fat &m_fat;
+    unsigned int *m_translationTable;
+    std::shared_ptr<file_entry> m_rootEntry;
+
+    void loadFullTree();
+    void loadSubTree(std::shared_ptr<file_entry> t_parent);
+
+    void printSubTree(std::shared_ptr<file_entry> t_parent, unsigned int t_depth);
 };
 
 
