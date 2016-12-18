@@ -124,3 +124,5 @@ semestralka.cbp
 .idea/misc.xml
 .idea/modules.xml
 .idea/zos_semestralka_fat.iml
+build/
+src/ThreadPool2.h
