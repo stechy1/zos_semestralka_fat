@@ -370,7 +370,7 @@ void Fat::printFileContent(std::shared_ptr<root_directory> t_rootDirectory) {
 void Fat::printSubTree(std::shared_ptr<root_directory> t_rootDirectory, unsigned int t_depth) {
     bool isDirectory = t_rootDirectory->file_type == FILE_TYPE_DIRECTORY;
     std::printf("%*s%s ", t_depth, isDirectory ? "+" : "-",
-           t_rootDirectory->file_name); // vypíše tabulátor podle aktuálního zanoření a "+" - directory, jinak "-"
+                t_rootDirectory->file_name); // vypíše tabulátor podle aktuálního zanoření a "+" - directory, jinak "-"
     auto content = loadDirectory(t_rootDirectory->first_cluster);
     auto workingDirectory = t_rootDirectory->first_cluster;
     auto maxIterationCount = t_rootDirectory->file_size % m_BootRecord->cluster_size;
@@ -575,7 +575,8 @@ void Fat::clearFatRecord(long t_offset) {
             throw std::runtime_error("Fat is inconsistent");
         }
 
-        if (workingOffset == FAT_FILE_END || workingOffset == FAT_BAD_CLUSTER || workingOffset == FAT_DIRECTORY_CONTENT) {
+        if (workingOffset == FAT_FILE_END || workingOffset == FAT_BAD_CLUSTER ||
+            workingOffset == FAT_DIRECTORY_CONTENT) {
             break;
         }
 

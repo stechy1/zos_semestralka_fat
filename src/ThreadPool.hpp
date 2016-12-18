@@ -116,8 +116,8 @@ public:
     }
 
     explicit ThreadPool(const std::uint32_t numThreads) : m_done{false},
-              m_workQueue{},
-              m_threads{} {
+                                                          m_workQueue{},
+                                                          m_threads{} {
         try {
             for (std::uint32_t i = 0u; i < numThreads; ++i) {
                 m_threads.emplace_back(std::thread(&ThreadPool::worker, this));

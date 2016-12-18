@@ -16,7 +16,6 @@
 
 #include <iostream>
 #include <cstring>
-#include <unistd.h>
 #include "Fat.hpp"
 #include "Defragmenter.hpp"
 #include "ThreadPool.hpp"
@@ -106,7 +105,7 @@ void printClusters(std::vector<unsigned int> clusters) {
 
 }
 
-int main (int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
     if (argc < 3) {
         perror("Příliš málo argumentů na můj vkus. Zkuste to s větším počtem. Končím!!!");
         exit(1);
@@ -121,7 +120,8 @@ int main (int argc, char *argv[]) {
         a(fat, std::move(argv[3]), std::move(argv[4]));
     } else if (action == ACTION_F) { // Smaže soubor s1 z vaseFAT.dat (s1 je plná cesta ve virtuální FAT)
         f(fat, std::move(argv[3]));
-    } else if (action == ACTION_C) { // Vypíše čísla clusterů, oddělené dvojtečkou, obsahující data souboru s1 (s1 je plná cesta ve virtuální FAT)
+    } else if (action ==
+               ACTION_C) { // Vypíše čísla clusterů, oddělené dvojtečkou, obsahující data souboru s1 (s1 je plná cesta ve virtuální FAT)
         c(fat, std::move(argv[3]));
     } else if (action == ACTION_M) { // Vytvoří nový adresář ADR v cestě ADR2
         m(fat, std::move(argv[3]), std::move(argv[4]));
@@ -129,7 +129,8 @@ int main (int argc, char *argv[]) {
         r(fat, std::move(argv[3]));
     } else if (action == ACTION_L) { // Vypíše obsah souboru s1 na obrazovku (s1 je plná cesta ve virtuální FAT)
         l(fat, std::move(argv[3]));
-    } else if (action == ACTION_P) { // Vypíše obsah adresáře ve formátu +adresář, +podadresář cluster, ukončeno --, - soubor první_cluster počet_clusterů. Jeden záznam jeden řádek. Podadresáře odsazeny o /t:
+    } else if (action ==
+               ACTION_P) { // Vypíše obsah adresáře ve formátu +adresář, +podadresář cluster, ukončeno --, - soubor první_cluster počet_clusterů. Jeden záznam jeden řádek. Podadresáře odsazeny o /t:
         fat.tree();
     } else if (action == ACTION_B) {
         b(fat);
@@ -140,7 +141,7 @@ int main (int argc, char *argv[]) {
         fat.printBootRecord();
         fat.printRootDirectories();
         fat.printClustersContent();
-    } else  {
+    } else {
         std::cout << "Konec" << std::endl;
         exit(0);
     }

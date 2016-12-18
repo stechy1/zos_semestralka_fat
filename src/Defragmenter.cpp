@@ -16,8 +16,8 @@
 
 #include "Defragmenter.hpp"
 
-Defragmenter::Defragmenter(Fat &t_fat) : m_fat(t_fat){
-    m_translationTable = new unsigned int [m_fat.m_BootRecord->cluster_count];
+Defragmenter::Defragmenter(Fat &t_fat) : m_fat(t_fat) {
+    m_translationTable = new unsigned int[m_fat.m_BootRecord->cluster_count];
     for (int i = 0; i < m_fat.m_BootRecord->cluster_count; ++i) {
         m_translationTable[i] = Fat::FAT_UNUSED;
     }

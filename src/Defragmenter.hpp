@@ -27,13 +27,17 @@ struct file_entry {
 };
 
 class Defragmenter {
-    
+
 public:
     Defragmenter(Fat &t_fat);
+
     Defragmenter(const Defragmenter &other) = delete;
-    Defragmenter& operator=(const Defragmenter& other) = delete;
+
+    Defragmenter &operator=(const Defragmenter &other) = delete;
+
     Defragmenter(Defragmenter &&other) = delete;
-    Defragmenter& operator=(Defragmenter&& other) = delete;
+
+    Defragmenter &operator=(Defragmenter &&other) = delete;
 
     virtual ~Defragmenter();
 
@@ -47,6 +51,7 @@ private:
     std::shared_ptr<file_entry> m_rootEntry;
 
     void loadFullTree();
+
     void loadSubTree(std::shared_ptr<file_entry> t_parent);
 
     void printSubTree(std::shared_ptr<file_entry> t_parent, unsigned int t_depth);
