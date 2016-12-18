@@ -98,7 +98,7 @@ public:
     void printRootDirectory(std::shared_ptr<root_directory> t_rootDirectory);
     void printClustersContent();
     void printFileContent(std::shared_ptr<root_directory> t_rootDirectory);
-    void printTree(std::shared_ptr<root_directory> t_rootDirectory, unsigned int t_depth);
+    void printSubTree(std::shared_ptr<root_directory> t_rootDirectory, unsigned int t_depth);
 
 private:
     std::string m_FilePath = "";

@@ -94,7 +94,7 @@ void Fat::tree() {
     std::printf("+%s\n", m_RootFile->file_name);
 
     for (auto &fileEntry : m_RootDirectories) {
-        printTree(fileEntry, SPACE_SIZE);
+        printSubTree(fileEntry, SPACE_SIZE);
     }
 }
 
@@ -367,7 +367,7 @@ void Fat::printFileContent(std::shared_ptr<root_directory> t_rootDirectory) {
 }
 
 // Vypíše stromovou strukturu od zadaného adresáře
-void Fat::printTree(std::shared_ptr<root_directory> t_rootDirectory, unsigned int t_depth) {
+void Fat::printSubTree(std::shared_ptr<root_directory> t_rootDirectory, unsigned int t_depth) {
     bool isDirectory = t_rootDirectory->file_type == FILE_TYPE_DIRECTORY;
     std::printf("%*s%s ", t_depth, isDirectory ? "+" : "-",
            t_rootDirectory->file_name); // vypíše tabulátor podle aktuálního zanoření a "+" - directory, jinak "-"
@@ -400,7 +400,7 @@ void Fat::printTree(std::shared_ptr<root_directory> t_rootDirectory, unsigned in
     if (isDirectory) {
         auto nextDepth = t_depth + SPACE_SIZE;
         for (auto &fileEntry : content) {
-            printTree(fileEntry, nextDepth);
+            printSubTree(fileEntry, nextDepth);
         }
     }
 }
