@@ -202,6 +202,11 @@ void Fat::createEmptyFat() {
 // Vloží soubor
 void Fat::insertFile(const std::string &t_filePath, const std::string &t_pseudoPath) {
     FILE *workingFile = std::fopen(t_filePath.c_str(), "r");
+
+    if (workingFile == nullptr) {
+        throw std::runtime_error("File not found");
+    }
+
     auto separatorIndex = t_pseudoPath.find_last_of(PATH_SEPARATOR);
     auto realPseudoPath = t_pseudoPath.substr(0, separatorIndex);
     auto parentDirectory = findFileDescriptor(realPseudoPath);
@@ -318,11 +323,11 @@ void Fat::printClustersContent() {
     std::printf("-------------------------------------------------------- \n");
 
     auto *p_cluster = new char[m_BootRecord->cluster_size];
-    std::memset(p_cluster, '\0', sizeof(p_cluster));
     std::fseek(m_FatFile, static_cast<int>(getClustersStartIndex()), SEEK_SET);
     unsigned int *fatTable = m_fatTables[0];
 
     for (int i = 1; i < m_BootRecord->cluster_count; ++i) {
+        std::memset(p_cluster, '\0', sizeof(p_cluster));
         std::fread(p_cluster, sizeof(char) * m_BootRecord->cluster_size, 1, m_FatFile);
 
         if (fatTable[i] == FAT_BAD_CLUSTER || fatTable[i] == FAT_UNUSED || fatTable[i] == FAT_DIRECTORY_CONTENT) {
@@ -585,6 +590,8 @@ void Fat::clearFatRecord(long t_offset) {
         workingOffset = nextOffset;
         counter++;
     }
+
+    saveFatTables();
 }
 
 // Vytvoří nový soubor
