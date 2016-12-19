@@ -15,6 +15,7 @@
  */
 
 #include "Defragmenter.hpp"
+#include "ThreadPool.hpp"
 
 Defragmenter::Defragmenter(Fat &t_fat) : m_fat(t_fat) {
     m_translationTable = new unsigned int[m_fat.m_BootRecord->cluster_count];
@@ -60,6 +61,7 @@ void Defragmenter::loadFullTree() {
 // Načte stromovou strukturu j
 void Defragmenter::loadSubTree(std::shared_ptr<file_entry> t_parent) {
 
+    std::vector<ThreadPool::TaskFuture<void>> vector;
     for (auto &child :t_parent->children) {
         if (child->me->file_type != Fat::FILE_TYPE_DIRECTORY) {
             continue;
@@ -72,7 +74,14 @@ void Defragmenter::loadSubTree(std::shared_ptr<file_entry> t_parent) {
             rootEntry->parent = child;
             child->children.push_back(rootEntry);
         }
-        loadSubTree(child);
+        DefaultThreadPool::submitJob([&](std::shared_ptr<file_entry> fileEntry) {
+            std::printf("%s\n", fileEntry->me->file_name);
+            loadSubTree(fileEntry);
+        }, child);
+    }
+
+    for (auto &&item : vector) {
+        item.get();
     }
 }
 
