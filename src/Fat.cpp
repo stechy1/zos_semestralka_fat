@@ -323,7 +323,7 @@ void Fat::printClustersContent() {
     std::printf("-------------------------------------------------------- \n");
 
     auto *p_cluster = new char[m_BootRecord->cluster_size];
-    std::fseek(m_FatFile, static_cast<int>(getClustersStartIndex()), SEEK_SET);
+    std::fseek(m_FatFile, static_cast<int>(getClusterStartIndex(1)), SEEK_SET);
     unsigned int *fatTable = m_fatTables[0];
 
     for (int i = 1; i < m_BootRecord->cluster_count; ++i) {
