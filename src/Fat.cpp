@@ -322,11 +322,11 @@ void Fat::printClustersContent() {
     std::printf("CLUSTERS CONTENT \n");
     std::printf("-------------------------------------------------------- \n");
 
-    auto *p_cluster = new char[m_BootRecord->cluster_size];
-    std::fseek(m_FatFile, static_cast<int>(getClusterStartIndex(1)), SEEK_SET);
+    char p_cluster[m_BootRecord->cluster_size];
+    std::fseek(m_FatFile, static_cast<int>(getClusterStartIndex(FAT_FIRST_CONTENT_INDEX)), SEEK_SET);
     unsigned int *fatTable = m_fatTables[0];
 
-    for (int i = 1; i < m_BootRecord->cluster_count; ++i) {
+    for (int i = FAT_FIRST_CONTENT_INDEX; i < m_BootRecord->cluster_count; ++i) {
         std::memset(p_cluster, '\0', sizeof(p_cluster));
         std::fread(p_cluster, sizeof(char) * m_BootRecord->cluster_size, 1, m_FatFile);
 
@@ -575,7 +575,7 @@ void Fat::clearFatRecord(long t_offset) {
     auto workingOffset = t_offset;
     auto counter = 0;
 
-    while (1) {
+    for(;;) {
         if (counter > m_BootRecord->cluster_count) {
             throw std::runtime_error("Fat is inconsistent");
         }

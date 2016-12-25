@@ -14,14 +14,14 @@
  *         limitations under the License.
  */
 
+#include <cstring>
 #include "Defragmenter.hpp"
 #include "ThreadPool.hpp"
 
+
 Defragmenter::Defragmenter(Fat &t_fat) : m_fat(t_fat) {
     m_translationTable = new unsigned int[m_fat.m_BootRecord->cluster_count];
-    for (int i = 0; i < m_fat.m_BootRecord->cluster_count; ++i) {
-        m_translationTable[i] = Fat::FAT_UNUSED;
-    }
+    std::memcpy(m_translationTable, m_fat.m_fatTables[0], sizeof(m_fat.m_fatTables[0]));
 
     m_rootEntry = std::make_shared<file_entry>();
     m_rootEntry->me = m_fat.m_RootFile;
@@ -42,6 +42,7 @@ Defragmenter::~Defragmenter() {
 
 // Spustí defragmentaci fatky
 void Defragmenter::runDefragmentation() {
+
 }
 
 // Nechá fatku vypsat stromovu strukturu, kde jsou vidět čísla clusterů
@@ -53,6 +54,16 @@ void Defragmenter::printTree() {
     }
 }
 
+// Vypíše stromovou strukturu od rodiče
+void Defragmenter::printSubTree(std::shared_ptr<file_entry> t_parent, unsigned int t_depth) {
+    auto isDirectory = t_parent->me->file_type == Fat::FILE_TYPE_DIRECTORY;
+    std::printf("%*s%s \n", t_depth, isDirectory ? "+" : "-", t_parent->me->file_name);
+
+    for (auto &child :t_parent->children) {
+        printSubTree(child, t_depth + Fat::SPACE_SIZE);
+    }
+}
+
 // Načte celou stromovou strukturu
 void Defragmenter::loadFullTree() {
     loadSubTree(m_rootEntry);
@@ -60,7 +71,6 @@ void Defragmenter::loadFullTree() {
 
 // Načte stromovou strukturu j
 void Defragmenter::loadSubTree(std::shared_ptr<file_entry> t_parent) {
-
     std::vector<ThreadPool::TaskFuture<void>> vector;
     for (auto &child :t_parent->children) {
         if (child->me->file_type != Fat::FILE_TYPE_DIRECTORY) {
@@ -85,12 +95,14 @@ void Defragmenter::loadSubTree(std::shared_ptr<file_entry> t_parent) {
     }
 }
 
-// Vypíše stromovou strukturu od rodiče
-void Defragmenter::printSubTree(std::shared_ptr<file_entry> t_parent, unsigned int t_depth) {
-    auto isDirectory = t_parent->me->file_type == Fat::FILE_TYPE_DIRECTORY;
-    std::printf("%*s%s \n", t_depth, isDirectory ? "+" : "-", t_parent->me->file_name);
+// Analyzuje fat tabulku a vytvoří transakční žurnál
+void Defragmenter::analyze() {
+    int actualClusterIndex = 1;
 
-    for (auto &child :t_parent->children) {
-        printSubTree(child, t_depth + Fat::SPACE_SIZE);
-    }
 }
+
+// Aplikuje transakce z transakčního žurnálu na celý souborov systém
+void Defragmenter::applyTransactions() {
+
+}
+

@@ -68,6 +68,10 @@ public:
     static const short FILE_TYPE_FILE = 1;
     static const short FILE_TYPE_DIRECTORY = 2;
 
+    // Index prvniho clusteru, který je použitelný pro zápis dat
+    // nultý index obsahuje "root_directory"
+    static const unsigned int FAT_FIRST_CONTENT_INDEX = 1;
+
     friend class Defragmenter;
 
     Fat(std::string &t_filePath);

@@ -45,6 +45,8 @@ public:
 
     void printTree();
 
+    void printSubTree(std::shared_ptr<file_entry> t_parent, unsigned int t_depth);
+
 private:
     Fat &m_fat;
     unsigned int *m_translationTable;
@@ -54,7 +56,9 @@ private:
 
     void loadSubTree(std::shared_ptr<file_entry> t_parent);
 
-    void printSubTree(std::shared_ptr<file_entry> t_parent, unsigned int t_depth);
+    void analyze();
+
+    void applyTransactions();
 };
 
 
