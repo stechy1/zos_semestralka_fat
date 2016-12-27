@@ -116,6 +116,7 @@ public:
     }
 
     explicit ThreadPool(const std::uint32_t numThreads) : m_done{false},
+                                                          m_workingThreads{0},
                                                           m_workQueue{},
                                                           m_threads{} {
         try {
@@ -149,6 +150,9 @@ public:
         return result;
     }
 
+    auto hasIdleThread() {
+        return m_workingThreads != m_threads.size();
+    }
 private:
     /**
      * Constantly running function each thread uses to acquire work items from the queue.
@@ -157,7 +161,9 @@ private:
         while (!m_done) {
             std::unique_ptr<IThreadTask> pTask{nullptr};
             if (m_workQueue.waitPop(pTask)) {
+                m_workingThreads++;
                 pTask->execute();
+                m_workingThreads--;
             }
         }
     }
@@ -177,6 +183,7 @@ private:
 
 private:
     std::atomic_bool m_done;
+    std::atomic_int m_workingThreads;
     ThreadSafeQueue<std::unique_ptr<IThreadTask>> m_workQueue;
     std::vector<std::thread> m_threads;
 };
@@ -191,6 +198,10 @@ inline ThreadPool &getThreadPool() {
 template<typename Func, typename... Args>
 inline auto submitJob(Func &&func, Args &&... args) {
     return getThreadPool().submit(std::forward<Func>(func), std::forward<Args>(args)...);
+}
+
+inline auto hasIdleThreads() {
+    return getThreadPool().hasIdleThread();
 }
 }
 
