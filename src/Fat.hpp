@@ -22,6 +22,8 @@
 #include <cmath>
 #include <mutex>
 
+#define PATH_SEPARATOR "/"
+
 //struktura na boot record
 struct boot_record {
     char volume_descriptor[251];              //popis
@@ -61,7 +63,7 @@ public:
     static const unsigned int FAT_SIZE = 1 << FAT_TYPE;
     static const unsigned int CLUSTER_COUNT = FAT_SIZE - RESERVER_CLUSTER_COUNT;
     // Oddělovač
-    const std::string PATH_SEPARATOR = "/";
+    //static constexpr const std::string PATH_SEPARATOR = "/";
     static const unsigned short SPACE_SIZE = 4;
 
     // File typy

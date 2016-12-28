@@ -66,6 +66,10 @@ std::vector<unsigned int> Fat::getClusters(std::shared_ptr<root_directory> t_fil
     assert(m_fatTables[0] != nullptr);
 
     auto clusters = std::vector<unsigned int>();
+    if (t_fileEntry->file_type == FILE_TYPE_DIRECTORY) {
+        return clusters;
+    }
+
     auto clusterSize = m_BootRecord->cluster_size;
     auto fileSize = t_fileEntry->file_size;
     auto maxIterationCount = fileSize % clusterSize;

@@ -47,6 +47,8 @@ public:
 
     void printSubTree(std::shared_ptr<file_entry> t_parent, unsigned int t_depth);
 
+    std::string getFullPath(std::shared_ptr<file_entry> t_file);
+
 private:
     Fat &m_fat;
     unsigned int *m_translationTable;
@@ -57,6 +59,8 @@ private:
     void loadSubTree(std::shared_ptr<file_entry> t_parent);
 
     void analyze();
+
+    unsigned int needReplace(std::vector<unsigned int> &clusters);
 
     void applyTransactions();
 };

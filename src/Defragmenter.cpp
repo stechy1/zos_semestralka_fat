@@ -15,6 +15,7 @@
  */
 
 #include <cstring>
+#include <stack>
 #include "Defragmenter.hpp"
 #include "ThreadPool.hpp"
 
@@ -42,7 +43,7 @@ Defragmenter::~Defragmenter() {
 
 // Spustí defragmentaci fatky
 void Defragmenter::runDefragmentation() {
-
+    analyze();
 }
 
 // Nechá fatku vypsat stromovu strukturu, kde jsou vidět čísla clusterů
@@ -64,6 +65,22 @@ void Defragmenter::printSubTree(std::shared_ptr<file_entry> t_parent, unsigned i
     }
 }
 
+// Sestaví úplnou cestu od souboru ke kořeni
+std::string Defragmenter::getFullPath(std::shared_ptr<file_entry> t_file) {
+    std::string path(t_file->me->file_name);
+
+    auto parent = t_file->parent;
+    while(std::strcmp(parent->me->file_name, m_fat.m_RootFile->file_name) != 0) {
+        path.insert(0, PATH_SEPARATOR);
+        path.insert(0, parent->me->file_name);
+        parent = parent->parent;
+    }
+
+    path.insert(0, PATH_SEPARATOR);
+
+    return path;
+}
+
 // Načte celou stromovou strukturu
 void Defragmenter::loadFullTree() {
     loadSubTree(m_rootEntry);
@@ -78,16 +95,37 @@ void Defragmenter::loadSubTree(std::shared_ptr<file_entry> t_parent) {
         }
 
         auto content = m_fat.loadDirectory(child->me->first_cluster);
+        std::sort(content.begin(), content.end(), [](std::shared_ptr<root_directory> lhs,
+                                                     std::shared_ptr<root_directory> rhs) {
+            if ((lhs->file_type == Fat::FILE_TYPE_DIRECTORY && rhs->file_type == Fat::FILE_TYPE_DIRECTORY)
+                    || (lhs->file_type != Fat::FILE_TYPE_DIRECTORY && rhs->file_type != Fat::FILE_TYPE_DIRECTORY)) {
+                std::strcmp(lhs->file_name, rhs->file_name);
+            }
+
+            if (lhs->file_type != Fat::FILE_TYPE_DIRECTORY) {
+                return 1;
+            }
+
+            if (rhs->file_type != Fat::FILE_TYPE_DIRECTORY) {
+                return -1;
+            }
+
+            return std::strcmp(lhs->file_name, rhs->file_name);
+        });
         for (auto &itemContent : content) {
             auto rootEntry = std::make_shared<file_entry>();
             rootEntry->me = itemContent;
             rootEntry->parent = child;
             child->children.push_back(rootEntry);
         }
+
+        if (DefaultThreadPool::hasIdleThreads()) {
         DefaultThreadPool::submitJob([&](std::shared_ptr<file_entry> fileEntry) {
-            std::printf("%s\n", fileEntry->me->file_name);
             loadSubTree(fileEntry);
         }, child);
+        } else {
+            loadSubTree(child);
+        }
     }
 
     for (auto &&item : vector) {
@@ -97,8 +135,60 @@ void Defragmenter::loadSubTree(std::shared_ptr<file_entry> t_parent) {
 
 // Analyzuje fat tabulku a vytvoří transakční žurnál
 void Defragmenter::analyze() {
-    int actualClusterIndex = 1;
+    unsigned int actualClusterIndex = 1;
 
+
+    std::queue<std::shared_ptr<file_entry>> workingStack;
+    for(auto it = m_rootEntry->children.rbegin(); it != m_rootEntry->children.rend(); ++it) {
+        workingStack.push(*it);
+    }
+
+    while(!workingStack.empty()) {
+        auto actual = std::move(workingStack.front());
+        workingStack.pop();
+
+        if (actual->me->file_type == Fat::FILE_TYPE_DIRECTORY) { // Jedná-li se o složku, přidám její obsah na konec zásobníku
+            for(auto it = actual->children.rbegin(); it != actual->children.rend(); ++it) {
+                workingStack.push(*it);
+            }
+        } else { // Nejedná-li se o složku, analyzuji soubor
+            auto clusters = m_fat.getClusters(actual->me);
+            auto badClusterIndex = needReplace(clusters);
+            if (badClusterIndex == 0) {
+                continue;
+            }
+            std::printf("Soubor %s potřebuje transfer\n", getFullPath(actual).c_str());
+
+            auto lastGoodClusterIndex = badClusterIndex - 1;
+            auto goodCluster = clusters.at(lastGoodClusterIndex);
+            for(unsigned int i = badClusterIndex; i < clusters.size(); i++) {
+                const auto &clusterToReplace = clusters.at(i);
+                const auto newCluster = goodCluster + 1;
+
+                std::printf("Přesouvám cluster %d na novou pozici: %d\n", clusterToReplace, newCluster);
+                goodCluster++;
+            }
+        }
+    }
+}
+
+// Zjistí, zda-li je potřeba shluknout obsah souboru. Pokud ano, vrátí index prvního clusteru, který musí být upraven
+unsigned int Defragmenter::needReplace(std::vector<unsigned int> &clusters) {
+    if (clusters.empty()) {
+        return 0;
+    }
+
+    auto index = clusters.front();
+    for(unsigned int i = 0; i < clusters.size(); i++) {
+        const auto &cluster = clusters.at(i);
+        if (index != cluster) {
+            return i;
+        }
+
+        index++;
+    }
+
+    return 0;
 }
 
 // Aplikuje transakce z transakčního žurnálu na celý souborov systém
