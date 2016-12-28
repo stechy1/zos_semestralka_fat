@@ -33,7 +33,7 @@ const std::string ACTION_B = "-b"; // Defragmentuje fatku
 const std::string ACTION_N = "-n"; // Vytvoří novou čistou fatku
 const std::string ACTION_D = "-d"; // Vypíše obsah celé fatky
 
-void printClusters(std::vector<unsigned int> clusters);
+void printClusters(std::vector<unsigned int> &clusters);
 
 void a(Fat &fat, std::string &&filePath, std::string &&pseudoPath) {
     try {
@@ -98,7 +98,7 @@ void l(Fat &fat, std::string &&pseudoPath) {
     }
 }
 
-void printClusters(std::vector<unsigned int> clusters) {
+void printClusters(std::vector<unsigned int> &clusters) {
     for (auto &&cluster : clusters) {
         std::cout << cluster << ", ";
     }
