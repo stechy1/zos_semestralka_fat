@@ -129,6 +129,7 @@ private:
     std::shared_ptr<root_directory> m_RootFile;
     std::vector<std::shared_ptr<root_directory>> m_RootDirectories;
     unsigned int **m_fatTables;
+    unsigned int *m_workingFatTable;
 
     long m_FatStartIndex = 0;
     long m_ClustersStartIndex = 0;

@@ -36,6 +36,7 @@ Fat::~Fat() {
     }
 
     delete[] m_fatTables;
+    m_workingFatTable = nullptr;
 
     closeFile();
 }
@@ -63,7 +64,7 @@ std::shared_ptr<root_directory> Fat::findFileDescriptor(const std::string &t_pat
 // Vrátí vektor clusterů, které tvoří obsah souboru
 std::vector<unsigned int> Fat::getClusters(std::shared_ptr<root_directory> t_fileEntry) {
     assert(m_BootRecord != nullptr);
-    assert(m_fatTables[0] != nullptr);
+    assert(m_workingFatTable != nullptr);
 
     auto clusters = std::vector<unsigned int>();
     if (t_fileEntry->file_type == FILE_TYPE_DIRECTORY) {
@@ -82,7 +83,7 @@ std::vector<unsigned int> Fat::getClusters(std::shared_ptr<root_directory> t_fil
             throw std::runtime_error("Inconsistent fat table");
         }
         clusters.push_back(workingCluster);
-        workingCluster = m_fatTables[0][workingCluster];
+        workingCluster = m_workingFatTable[workingCluster];
         isEOF = workingCluster == FAT_FILE_END;
         count++;
     } while (!isEOF);
@@ -183,6 +184,7 @@ void Fat::createEmptyFat() {
             m_fatTables[i][j] = FAT_UNUSED;
         }
     }
+    m_workingFatTable = m_fatTables[0];
 
     setFatPiece(0, FAT_FILE_END);
 
@@ -276,7 +278,6 @@ void Fat::save() {
     saveRootDirectory();
 }
 
-
 // Print methods
 
 // Vypíše obsah boot recordu
@@ -328,13 +329,12 @@ void Fat::printClustersContent() {
 
     char p_cluster[m_BootRecord->cluster_size];
     std::fseek(m_FatFile, static_cast<int>(getClusterStartIndex(FAT_FIRST_CONTENT_INDEX)), SEEK_SET);
-    unsigned int *fatTable = m_fatTables[0];
 
     for (int i = FAT_FIRST_CONTENT_INDEX; i < m_BootRecord->cluster_count; ++i) {
         std::memset(p_cluster, '\0', sizeof(p_cluster));
         std::fread(p_cluster, sizeof(char) * m_BootRecord->cluster_size, 1, m_FatFile);
 
-        if (fatTable[i] == FAT_BAD_CLUSTER || fatTable[i] == FAT_UNUSED || fatTable[i] == FAT_DIRECTORY_CONTENT) {
+        if (m_workingFatTable[i] == FAT_BAD_CLUSTER || m_workingFatTable[i] == FAT_UNUSED || m_workingFatTable[i] == FAT_DIRECTORY_CONTENT) {
             continue;
         }
 
@@ -369,11 +369,12 @@ void Fat::printFileContent(std::shared_ptr<root_directory> t_rootDirectory) {
         if (workingCluster == FAT_FILE_END) {
             break;
         }
-        workingCluster = m_fatTables[0][workingCluster];
+        workingCluster = m_workingFatTable[workingCluster];
         std::printf("Cluster %d: %s\n", cluster, p_cluster);
         count++;
     }
 }
+
 
 // Vypíše stromovou strukturu od zadaného adresáře
 void Fat::printSubTree(std::shared_ptr<root_directory> t_rootDirectory, unsigned int t_depth) {
@@ -390,7 +391,7 @@ void Fat::printSubTree(std::shared_ptr<root_directory> t_rootDirectory, unsigned
     }
     while (1) { // Výpis clusterů
         std::printf("%d", workingDirectory);
-        workingDirectory = m_fatTables[0][workingDirectory];
+        workingDirectory = m_workingFatTable[workingDirectory];
         count++;
 
         if (workingDirectory == FAT_UNUSED
@@ -413,7 +414,6 @@ void Fat::printSubTree(std::shared_ptr<root_directory> t_rootDirectory, unsigned
         }
     }
 }
-
 
 // Private methods
 
@@ -445,8 +445,6 @@ void Fat::loadBootRecord() {
 
     m_BootRecord = std::make_unique<boot_record>();
     std::memcpy(&(*m_BootRecord), &tmp, sizeof(boot_record));
-
-    //std::fread(&(*m_BootRecord), sizeof(boot_record), 1, m_FatFile);
 }
 
 // Načte fat tabulky
@@ -464,6 +462,7 @@ void Fat::loadFatTable() {
             m_fatTables[i][j] = *fat_item;
         }
     }
+    m_workingFatTable = m_fatTables[0];
 
     delete fat_item;
 }
@@ -589,7 +588,7 @@ void Fat::clearFatRecord(long t_offset) {
             break;
         }
 
-        auto nextOffset = m_fatTables[0][workingOffset];
+        auto nextOffset = m_workingFatTable[workingOffset];
         setFatPiece(workingOffset, FAT_UNUSED);
         workingOffset = nextOffset;
         counter++;
@@ -597,6 +596,7 @@ void Fat::clearFatRecord(long t_offset) {
 
     saveFatTables();
 }
+
 
 // Vytvoří nový soubor
 std::shared_ptr<root_directory>
@@ -614,7 +614,6 @@ Fat::makeFile(const std::string &t_fileName, const std::string &t_fileMod, long 
 
     return file;
 }
-
 
 // Najde první root_directory, která odpovídá zadané cestě
 std::shared_ptr<root_directory> Fat::findFileDescriptor(const std::shared_ptr<root_directory> &t_parent,
@@ -712,7 +711,7 @@ const unsigned int Fat::getClusterStartIndex(unsigned int t_offset) {
 // Vrátí první voln cluster
 const unsigned int Fat::getFreeCluster() {
     for (unsigned int i = 0; i < m_BootRecord->cluster_count; ++i) {
-        if (m_fatTables[0][i] == FAT_UNUSED) {
+        if (m_workingFatTable[i] == FAT_UNUSED) {
             return i;
         }
     }
