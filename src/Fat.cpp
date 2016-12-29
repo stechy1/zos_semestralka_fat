@@ -271,6 +271,63 @@ void Fat::deleteFile(const std::string &t_pseudoPath) {
     clearFatRecord(fileEntry->first_cluster);
 }
 
+// Vrátí surový obsah
+const std::string Fat::getClusterContent(const unsigned int t_index) {
+    assert(m_BootRecord != nullptr);
+    assert(m_workingFatTable != nullptr);
+
+    std::fseek(m_FatFile, getClusterStartIndex(t_index), SEEK_SET);
+    char tmp[m_BootRecord->cluster_size];
+    std::memset(&tmp, '\0', sizeof(tmp));
+    std::fread(&tmp, sizeof(tmp), 1, m_FatFile);
+
+    return std::string(tmp);
+}
+
+const std::vector<std::string> Fat::readFileContent(const std::shared_ptr<root_directory> t_rootDirectory) {
+    return readFileContent(t_rootDirectory->first_cluster, t_rootDirectory->file_size);
+}
+
+// Vrátí obsah souboru ve vektoru
+const std::vector<std::string> Fat::readFileContent(const unsigned int t_index, const long t_fileSize) {
+    assert(m_FatFile != nullptr);
+    assert(m_BootRecord != nullptr);
+
+    std::vector<std::string> result;
+    auto clusterSize = m_BootRecord->cluster_size;
+    char p_cluster[clusterSize];
+    std::memset(p_cluster, '\0', sizeof(p_cluster));
+    auto workingCluster = t_index;
+    auto maxIterationCount = t_fileSize % clusterSize;
+    auto count = 0;
+
+    for (;;) {
+        if (count >= maxIterationCount) { // Detekce zacyklení
+            throw std::runtime_error("Inconsistent fat table");
+        }
+        std::fseek(&(*m_FatFile), getClusterStartIndex(workingCluster), SEEK_SET);
+        std::fread(&p_cluster, clusterSize, 1, m_FatFile);
+        if (workingCluster == FAT_FILE_END) {
+            break;
+        }
+        workingCluster = m_workingFatTable[workingCluster];
+        result.push_back(std::string(p_cluster));
+        count++;
+    }
+
+    return result;
+}
+
+
+// Zapíše surový obsah do clusteru
+void Fat::writeClusterContent(const unsigned int t_index, const std::string &t_data) {
+    assert(m_BootRecord != nullptr);
+    assert(m_workingFatTable != nullptr);
+
+    std::fseek(m_FatFile, getClusterStartIndex(t_index), SEEK_SET);
+    std::fwrite(t_data.c_str(), t_data.size(), 1, m_FatFile);
+}
+
 // Uloží statické informace o fatce do souboru
 void Fat::save() {
     saveBootRecord();
@@ -293,7 +350,7 @@ void Fat::printBootRecord() {
     std::printf("cluster_size :%d\n", m_BootRecord->cluster_size);
     std::printf("root_directory_max_entries_count :%ld\n", m_BootRecord->root_directory_max_entries_count);
     std::printf("cluster count :%d\n", m_BootRecord->cluster_count);
-    std::printf("reserved clusters :%d\n", m_BootRecord->reserved_cluster_count);
+    std::printf("reserved content :%d\n", m_BootRecord->reserved_cluster_count);
     std::printf("signature :%s\n", m_BootRecord->signature);
 }
 
@@ -309,7 +366,7 @@ void Fat::printRootDirectories() {
 }
 
 // Vypíše obsah požadované boot directory
-void Fat::printRootDirectory(std::shared_ptr<root_directory> t_rootDirectory) {
+void Fat::printRootDirectory(const std::shared_ptr<root_directory> t_rootDirectory) {
     std::printf("file_name :%s\n", t_rootDirectory->file_name);
     std::printf("file_mod :%s\n", t_rootDirectory->file_mod);
     std::printf("file_type :%d\n", t_rootDirectory->file_type);
@@ -347,37 +404,15 @@ void Fat::printClustersContent() {
 }
 
 // Vypíše obsah celého souboru
-void Fat::printFileContent(std::shared_ptr<root_directory> t_rootDirectory) {
-    assert(m_FatFile != nullptr);
-    assert(m_BootRecord != nullptr);
-
-    auto clusterSize = m_BootRecord->cluster_size;
-    char p_cluster[clusterSize];
-    std::memset(p_cluster, '\0', sizeof(p_cluster));
-    auto workingCluster = t_rootDirectory->first_cluster;
-    auto fileSize = t_rootDirectory->file_size;
-    auto maxIterationCount = fileSize % clusterSize;
-    auto count = 0;
-
-    for (;;) {
-        if (count >= maxIterationCount && t_rootDirectory->file_type != FILE_TYPE_DIRECTORY) { // Detekce zacyklení
-            throw std::runtime_error("Inconsistent fat table");
-        }
-        std::fseek(&(*m_FatFile), getClusterStartIndex(workingCluster), SEEK_SET);
-        std::fread(&p_cluster, clusterSize, 1, m_FatFile);
-        int cluster = workingCluster;
-        if (workingCluster == FAT_FILE_END) {
-            break;
-        }
-        workingCluster = m_workingFatTable[workingCluster];
-        std::printf("Cluster %d: %s\n", cluster, p_cluster);
-        count++;
+void Fat::printFileContent(const std::vector<std::string> &t_fileContent) {
+    for (auto &&content : t_fileContent) {
+        std::printf("%s\n", content.c_str());
     }
 }
 
 
 // Vypíše stromovou strukturu od zadaného adresáře
-void Fat::printSubTree(std::shared_ptr<root_directory> t_rootDirectory, unsigned int t_depth) {
+void Fat::printSubTree(const std::shared_ptr<root_directory> t_rootDirectory, const unsigned int t_depth) {
     bool isDirectory = t_rootDirectory->file_type == FILE_TYPE_DIRECTORY;
     std::printf("%*s%s ", t_depth, isDirectory ? "+" : "-",
                 t_rootDirectory->file_name); // vypíše tabulátor podle aktuálního zanoření a "+" - directory, jinak "-"
@@ -718,4 +753,9 @@ const unsigned int Fat::getFreeCluster() {
 
     throw std::runtime_error("Not enough space.");
 }
+
+
+
+
+
 

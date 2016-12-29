@@ -107,6 +107,14 @@ public:
 
     void deleteFile(const std::string &t_pseudoPath);
 
+    const std::string getClusterContent(const unsigned int t_index);
+
+    const std::vector<std::string> readFileContent(const std::shared_ptr<root_directory> t_rootDirectory);
+
+    const std::vector<std::string> readFileContent(const unsigned int t_index, const long t_fileSize);
+
+    void writeClusterContent(const unsigned int t_index, const std::string &t_data);
+
     void save();
 
     // Metody pro výpis informací
@@ -114,13 +122,13 @@ public:
 
     void printRootDirectories();
 
-    void printRootDirectory(std::shared_ptr<root_directory> t_rootDirectory);
+    void printRootDirectory(const std::shared_ptr<root_directory> t_rootDirectory);
 
     void printClustersContent();
 
-    void printFileContent(std::shared_ptr<root_directory> t_rootDirectory);
+    void printFileContent(const std::vector<std::string> &t_fileContent);
 
-    void printSubTree(std::shared_ptr<root_directory> t_rootDirectory, unsigned int t_depth);
+    void printSubTree(const std::shared_ptr<root_directory> t_rootDirectory, const unsigned int t_depth);
 
 private:
     std::string m_FilePath = "";

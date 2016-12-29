@@ -45,24 +45,29 @@ public:
 
     void printTree();
 
-    void printSubTree(std::shared_ptr<file_entry> t_parent, unsigned int t_depth);
+    void printSubTree(const std::shared_ptr<file_entry> t_parent, const unsigned int t_depth);
 
-    std::string getFullPath(std::shared_ptr<file_entry> t_file);
+    const std::string getFullPath(const std::shared_ptr<file_entry> t_file);
 
 private:
     Fat &m_fat;
-    unsigned int *m_translationTable;
     std::shared_ptr<file_entry> m_rootEntry;
 
     void loadFullTree();
 
-    void loadSubTree(std::shared_ptr<file_entry> t_parent);
+    void loadSubTree(const std::shared_ptr<file_entry> t_parent);
 
     void analyze();
 
-    unsigned int needReplace(std::vector<unsigned int> &clusters);
+    const unsigned int needReplace(const std::vector<unsigned int> &clusters);
 
-    void applyTransactions();
+    void swapFatRegistry(const unsigned int lhs, const unsigned int rhs);
+
+    void swapClusters(const unsigned int lhs, const unsigned int rhs);
+
+    const unsigned int findParentClusterIndex(const unsigned int t_child);
+
+    const std::shared_ptr<file_entry> findParentFileEntry(const unsigned int t_child);
 };
 
 

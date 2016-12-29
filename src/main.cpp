@@ -92,7 +92,8 @@ void r(Fat &fat, std::string &&pseudoPath) {
 void l(Fat &fat, std::string &&pseudoPath) {
     try {
         auto rootDirectory = fat.findFileDescriptor(pseudoPath);
-        fat.printFileContent(rootDirectory);
+        auto content = fat.readFileContent(rootDirectory);
+        fat.printFileContent(content);
     } catch (const std::runtime_error &ex) {
         std::cout << ex.what() << std::endl;
     }
