@@ -49,7 +49,7 @@ void b(Fat &fat) {
     fat.tree();
     defragmenter.runDefragmentation();
     std::cout << "After" << std::endl;
-    defragmenter.printTree();
+    fat.tree();
 }
 
 void f(Fat &fat, std::string &&pseudoPath) {

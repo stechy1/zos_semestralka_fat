@@ -166,7 +166,6 @@ void Defragmenter::analyze() {
 
                 std::printf("Přesouvám cluster %d na novou pozici: %d\n", clusterToReplace, newCluster);
                 swapFatRegistry(clusterToReplace, newCluster);
-                swapClusters(clusterToReplace, newCluster);
                 goodCluster++;
             }
         }
@@ -183,7 +182,18 @@ const unsigned int Defragmenter::needReplace(const std::vector<unsigned int> &cl
     auto index = clusters.front();
     for(unsigned int i = 0; i < clusters.size(); i++) {
         const auto &cluster = clusters.at(i);
+
         if (index != cluster) {
+            if (m_fat.m_workingFatTable[index] == Fat::FAT_DIRECTORY_CONTENT) {
+                while (m_fat.m_workingFatTable[index] == Fat::FAT_DIRECTORY_CONTENT) {
+                    index++;
+                    if (index >= clusters.size()) {
+                        return 0;
+                    }
+                }
+                index++;
+                continue;
+            }
             return i;
         }
 
@@ -225,6 +235,7 @@ void Defragmenter::swapFatRegistry(const unsigned int lhs, const unsigned int rh
 
             auto tmp = lhsContent;
             m_fat.m_workingFatTable[lhs] = rhsContent;
+            m_fat.m_workingFatTable[lhsParent] = rhs;
             m_fat.m_workingFatTable[rhs] = tmp;
         }
 
@@ -233,7 +244,11 @@ void Defragmenter::swapFatRegistry(const unsigned int lhs, const unsigned int rh
         swapClusters(lhs, rhs);
 
         auto tmp = lhsContent;
+        if (rhsContent != Fat::FAT_UNUSED) {
+            m_fat.m_workingFatTable[rhsParent] = lhs;
+        }
         m_fat.m_workingFatTable[lhs] = rhsContent;
+        m_fat.m_workingFatTable[lhsParent] = rhs;
         m_fat.m_workingFatTable[rhs] = tmp;
     }
 }
