@@ -17,31 +17,12 @@
 #ifndef SEMESTRALKA_FAT_HPP
 #define SEMESTRALKA_FAT_HPP
 
-
 #include <vector>
 #include <memory>
 #include <cmath>
+#include <mutex>
 
-const int FAT_UNUSED = 65535;
-const int FAT_FILE_END = 65534;
-const int FAT_BAD_CLUSTER = 65533;
-const int FAT_DIRECTORY_CONTENT = 65532;
-
-// Definice vlastnosti boot recordu
-const unsigned int FAT_COPIES = 2;
-const unsigned int FAT_TYPE = 12; // == FAT12, je možné i FAT32...
-const unsigned int CLUSTER_SIZE = 128;
-const unsigned int RESERVER_CLUSTER_COUNT = 10;
-const long ROOT_DIRECTORY_MAX_ENTRIES_COUNT = 3;
-const unsigned int FAT_SIZE = 1 << FAT_TYPE;
-const unsigned int CLUSTER_COUNT = FAT_SIZE - RESERVER_CLUSTER_COUNT;
-// Oddělovač
-const std::string PATH_SEPARATOR = "/";
-const unsigned short SPACE_SIZE = 4;
-
-// File typy
-const short FILE_TYPE_FILE = 1;
-const short FILE_TYPE_DIRECTORY = 2;
+#define PATH_SEPARATOR "/"
 
 //struktura na boot record
 struct boot_record {
@@ -67,64 +48,132 @@ struct root_directory {
 class Fat {
 
 public:
+
+    static const int FAT_UNUSED = 65535;
+    static const int FAT_FILE_END = 65534;
+    static const int FAT_BAD_CLUSTER = 65533;
+    static const int FAT_DIRECTORY_CONTENT = 65532;
+
+    // Definice vlastnosti boot recordu
+    static const unsigned int FAT_COPIES = 2;
+    static const unsigned int FAT_TYPE = 12; // == FAT12, je možné i FAT32...
+    static const unsigned int CLUSTER_SIZE = 150;
+    static const unsigned int RESERVER_CLUSTER_COUNT = 10;
+    static const long ROOT_DIRECTORY_MAX_ENTRIES_COUNT = 3;
+    static const unsigned int FAT_SIZE = 1 << FAT_TYPE;
+    static const unsigned int CLUSTER_COUNT = FAT_SIZE - RESERVER_CLUSTER_COUNT;
+    // Oddělovač
+    //static constexpr const std::string PATH_SEPARATOR = "/";
+    static const unsigned short SPACE_SIZE = 4;
+
+    // File typy
+    static const short FILE_TYPE_FILE = 1;
+    static const short FILE_TYPE_DIRECTORY = 2;
+
+    // Index prvniho clusteru, který je použitelný pro zápis dat
+    // nultý index obsahuje "root_directory"
+    static const unsigned int FAT_FIRST_CONTENT_INDEX = 1;
+
+    friend class Defragmenter;
+
     Fat(std::string &t_filePath);
+
     Fat(const Fat &other) = delete;
-    Fat& operator=(const Fat& other) = delete;
+
+    Fat &operator=(const Fat &other) = delete;
+
     Fat(Fat &&other) = delete;
-    Fat& operator=(Fat&& other) = delete;
+
+    Fat &operator=(Fat &&other) = delete;
 
     ~Fat();
 
     // Uživatelské funkce
     void loadFat();
+
     std::shared_ptr<root_directory> findFileDescriptor(const std::string &t_path);
+
     std::vector<unsigned int> getClusters(std::shared_ptr<root_directory> t_fileEntry);
+
     void tree();
+
     void createEmptyFat();
+
     void createDirectory(const std::string &t_path, const std::string &t_addr);
+
     void deleteDirectory(const std::string &t_pseudoPath);
+
     void insertFile(const std::string &t_filePath, const std::string &t_pseudoPath);
+
     void deleteFile(const std::string &t_pseudoPath);
+
+    const std::string getClusterContent(const unsigned int t_index);
+
+    const std::vector<std::string> readFileContent(const std::shared_ptr<root_directory> t_rootDirectory);
+
+    const std::vector<std::string> readFileContent(const unsigned int t_index, const long t_fileSize);
+
+    void writeClusterContent(const unsigned int t_index, const std::string &t_data);
 
     void save();
 
     // Metody pro výpis informací
     void printBootRecord();
+
     void printRootDirectories();
-    void printRootDirectory(std::shared_ptr<root_directory> t_rootDirectory);
+
+    void printRootDirectory(const std::shared_ptr<root_directory> t_rootDirectory);
+
     void printClustersContent();
-    void printFileContent(std::shared_ptr<root_directory> t_rootDirectory);
-    void printTree(std::shared_ptr<root_directory> t_rootDirectory, unsigned int t_depth);
+
+    void printFileContent(const std::vector<std::string> &t_fileContent);
+
+    void printSubTree(const std::shared_ptr<root_directory> t_rootDirectory, const unsigned int t_depth);
 
 private:
     std::string m_FilePath = "";
     FILE *m_FatFile;
     std::unique_ptr<boot_record> m_BootRecord;
-    std::shared_ptr<root_directory>m_RootFile;
+    std::shared_ptr<root_directory> m_RootFile;
     std::vector<std::shared_ptr<root_directory>> m_RootDirectories;
     unsigned int **m_fatTables;
+    unsigned int *m_workingFatTable;
 
     long m_FatStartIndex = 0;
     long m_ClustersStartIndex = 0;
 
+    mutable std::recursive_mutex m_recursive_mutex;
+
+    void openFile();
+
+    void closeFile();
+
     // Načítací metody
     void loadBootRecord();
+
     void loadFatTable();
+
     std::vector<std::shared_ptr<root_directory>> loadDirectory(unsigned int t_offset);
 
     // Ukládací metody
     void saveBootRecord();
+
     void saveFatTables();
+
     void saveFatPiece(long t_offset, unsigned int t_value);
+
     void saveRootDirectory();
+
     void saveClusterWithFiles(std::vector<std::shared_ptr<root_directory>> t_rootDirectory, unsigned int t_offset);
 
     // Privátní výkonné metody (dělají nějakou prácí)
     void setFatPiece(long t_offset, unsigned int t_value);
+
     void clearFatRecord(long t_offset);
 
-    std::shared_ptr<root_directory> makeFile(const std::string &t_fileName, const std::string &t_fileMod, long t_fileSize, short t_fileType,
-                                             unsigned int t_firstCluster);
+    std::shared_ptr<root_directory>
+    makeFile(const std::string &t_fileName, const std::string &t_fileMod, long t_fileSize, short t_fileType,
+             unsigned int t_firstCluster);
 
     std::shared_ptr<root_directory> findFileDescriptor(const std::shared_ptr<root_directory> &t_parent,
                                                        const std::vector<std::shared_ptr<root_directory>> &t_rootDirectory,
@@ -134,8 +183,11 @@ private:
 
     // Pomocné metody pro získání offsetů
     const unsigned int getFatStartIndex();
+
     const unsigned int getClustersStartIndex();
+
     const unsigned int getClusterStartIndex(unsigned int t_offset);
+
     const unsigned int getFreeCluster();
 
 

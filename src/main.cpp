@@ -16,31 +16,97 @@
 
 #include <iostream>
 #include <cstring>
-#include <unistd.h>
 #include "Fat.hpp"
+#include "Defragmenter.hpp"
+#include "ThreadPool.hpp"
 
 // Definice proveditelných akcí
-const std::string ACTION_A = "-a";
-const std::string ACTION_F = "-f";
-const std::string ACTION_C = "-c";
-const std::string ACTION_M = "-m";
-const std::string ACTION_R = "-r";
-const std::string ACTION_L = "-l";
-const std::string ACTION_P = "-p";
+const std::string ACTION_A = "-a"; // Nahraje soubor z adresáře do cesty virtuální FAT tabulky
+const std::string ACTION_F = "-f"; // Smaže soubor s1 z vaseFAT.dat (s1 je plná cesta ve virtuální FAT)
+const std::string ACTION_C = "-c"; // Vypíše čísla clusterů, oddělené dvojtečkou, obsahující data souboru s1 (s1 je plná cesta ve virtuální FAT)
+const std::string ACTION_M = "-m"; // Vytvoří nový adresář ADR v cestě ADR2
+const std::string ACTION_R = "-r"; // Smaže prázdný adresář ADR (ADR je plná cesta ve virtuální FAT)
+const std::string ACTION_L = "-l"; // Vypíše obsah souboru s1 na obrazovku (s1 je plná cesta ve virtuální FAT)
+const std::string ACTION_P = "-p"; // Vypíše obsah adresáře ve formátu +adresář, +podadresář cluster, ukončeno --, - soubor první_cluster počet_clusterů. Jeden záznam jeden řádek. Podadresáře odsazeny o /t:
+const std::string ACTION_B = "-b"; // Defragmentuje fatku
 // Moje definice akcí
-const std::string ACTION_N = "-n";
-const std::string ACTION_D = "-d";
+const std::string ACTION_N = "-n"; // Vytvoří novou čistou fatku
+const std::string ACTION_D = "-d"; // Vypíše obsah celé fatky
 
-const std::string PATH_NOT_FOUND = "PATH NOT FOUND";
+void printClusters(std::vector<unsigned int> &clusters);
 
-void printClusters(std::vector<unsigned int> clusters) {
+void a(Fat &fat, std::string &&filePath, std::string &&pseudoPath) {
+    try {
+        fat.insertFile(filePath, pseudoPath);
+    } catch (std::exception &ex) {
+        std::cout << ex.what() << std::endl;
+    }
+}
+
+void b(Fat &fat) {
+    Defragmenter defragmenter(fat);
+    std::cout << "Before" << std::endl;
+    fat.tree();
+    defragmenter.runDefragmentation();
+    std::cout << "After" << std::endl;
+    fat.tree();
+}
+
+void f(Fat &fat, std::string &&pseudoPath) {
+    try {
+        fat.deleteFile(pseudoPath);
+    } catch (std::exception &ex) {
+        std::cout << ex.what() << std::endl;
+    }
+}
+
+void c(Fat &fat, std::string &&pseudoPath) {
+    try {
+        auto rootDirectory = fat.findFileDescriptor(pseudoPath);
+
+        auto clusters = fat.getClusters(rootDirectory);
+
+        std::cout << pseudoPath << ": ";
+        printClusters(clusters);
+    } catch (std::exception &ex) {
+        std::cout << ex.what() << std::endl;
+    }
+}
+
+void m(Fat &fat, std::string &&addrPath, std::string &&addr) {
+    try {
+        fat.createDirectory(addrPath, addr);
+    } catch (std::exception &ex) {
+        std::cout << ex.what() << std::endl;
+    }
+}
+
+void r(Fat &fat, std::string &&pseudoPath) {
+    try {
+        fat.deleteDirectory(pseudoPath);
+    } catch (std::exception &ex) {
+        std::cout << ex.what() << std::endl;
+    }
+}
+
+void l(Fat &fat, std::string &&pseudoPath) {
+    try {
+        auto rootDirectory = fat.findFileDescriptor(pseudoPath);
+        auto content = fat.readFileContent(rootDirectory);
+        fat.printFileContent(content);
+    } catch (const std::runtime_error &ex) {
+        std::cout << ex.what() << std::endl;
+    }
+}
+
+void printClusters(std::vector<unsigned int> &clusters) {
     for (auto &&cluster : clusters) {
         std::cout << cluster << ", ";
     }
 
 }
 
-int main (int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
     if (argc < 3) {
         perror("Příliš málo argumentů na můj vkus. Zkuste to s větším počtem. Končím!!!");
         exit(1);
@@ -49,94 +115,34 @@ int main (int argc, char *argv[]) {
     std::string fileName(argv[1]);
     std::string action(argv[2]);
 
+    Fat fat(fileName);
+
     if (action == ACTION_A) {        // Nahraje soubor z adresáře do cesty virtuální FAT tabulky
-        Fat fat(fileName);
-        fat.loadFat();
-
-        std::string filePath = argv[3];
-        std::string pseudoPath = argv[4];
-
-        try {
-            fat.insertFile(filePath, pseudoPath);
-        } catch (std::exception &ex) {
-            std::cout << ex.what() << std::endl;
-        }
+        a(fat, std::move(argv[3]), std::move(argv[4]));
     } else if (action == ACTION_F) { // Smaže soubor s1 z vaseFAT.dat (s1 je plná cesta ve virtuální FAT)
-        Fat fat(fileName);
-        fat.loadFat();
-
-        std::string pseudoPath = argv[3];
-
-         try {
-             fat.deleteFile(pseudoPath);
-         } catch (std::exception &ex) {
-             std::cout << ex.what() << std::endl;
-         }
-    } else if (action == ACTION_C) { // Vypíše čísla clusterů, oddělené dvojtečkou, obsahující data souboru s1 (s1 je plná cesta ve virtuální FAT)
-        Fat fat(fileName);
-        fat.loadFat();
-
-        std::string filePath = argv[3];
-        try {
-            auto rootDirectory = fat.findFileDescriptor(filePath);
-
-            auto clusters = fat.getClusters(rootDirectory);
-
-            std::cout << filePath << ": ";
-            printClusters(clusters);
-        } catch (std::exception &ex) {
-            std::cout << ex.what() << std::endl;
-        }
-
+        f(fat, std::move(argv[3]));
+    } else if (action ==
+               ACTION_C) { // Vypíše čísla clusterů, oddělené dvojtečkou, obsahující data souboru s1 (s1 je plná cesta ve virtuální FAT)
+        c(fat, std::move(argv[3]));
     } else if (action == ACTION_M) { // Vytvoří nový adresář ADR v cestě ADR2
-        Fat fat(fileName);
-        fat.loadFat();
-        std::string addrPath = argv[3];
-        std::string addr = argv[4];
-
-        try {
-            fat.createDirectory(addrPath, addr);
-        } catch (std::exception &ex) {
-            std::cout << ex.what() << std::endl;
-        }
-
+        m(fat, std::move(argv[3]), std::move(argv[4]));
     } else if (action == ACTION_R) { // Smaže prázdný adresář ADR (ADR je plná cesta ve virtuální FAT)
-        Fat fat(fileName);
-        fat.loadFat();
-
-        std::string pseudoPath = argv[3];
-
-        try {
-            fat.deleteDirectory(pseudoPath);
-        } catch (std::exception &ex) {
-            std::cout << ex.what() << std::endl;
-        }
+        r(fat, std::move(argv[3]));
     } else if (action == ACTION_L) { // Vypíše obsah souboru s1 na obrazovku (s1 je plná cesta ve virtuální FAT)
-        Fat fat(fileName);
-        fat.loadFat();
-        std::string filePath = argv[3];
-        try {
-            auto rootDirectory = fat.findFileDescriptor(filePath);
-            fat.printFileContent(rootDirectory);
-        } catch (const std::runtime_error &ex) {
-            std::cout << ex.what() << std::endl;
-        }
-    } else if (action == ACTION_P) { // Vypíše obsah adresáře ve formátu +adresář, +podadresář cluster, ukončeno --, - soubor první_cluster počet_clusterů. Jeden záznam jeden řádek. Podadresáře odsazeny o /t:
-        Fat fat(fileName);
-        fat.loadFat();
+        l(fat, std::move(argv[3]));
+    } else if (action ==
+               ACTION_P) { // Vypíše obsah adresáře ve formátu +adresář, +podadresář cluster, ukončeno --, - soubor první_cluster počet_clusterů. Jeden záznam jeden řádek. Podadresáře odsazeny o /t:
         fat.tree();
+    } else if (action == ACTION_B) {
+        b(fat);
     } else if (action == ACTION_N) { // Vytvoří novou čistou fatku
-        Fat fat(fileName);
         fat.createEmptyFat();
         fat.save();
     } else if (action == ACTION_D) { // Vypíše obsah celé fatky
-        Fat fat(fileName);
-        fat.loadFat();
-
         fat.printBootRecord();
         fat.printRootDirectories();
         fat.printClustersContent();
-    } else  {
+    } else {
         std::cout << "Konec" << std::endl;
         exit(0);
     }
