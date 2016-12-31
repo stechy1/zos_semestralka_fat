@@ -39,13 +39,11 @@ Defragmenter::~Defragmenter() {}
 
 // Spustí defragmentaci fatky
 void Defragmenter::runDefragmentation() {
-    for(;;) {
-        auto success = analyze();
-        if (success) {
-            break;
-        }
-    }
+    auto success = analyze();
     m_fat.save();
+    if (!success) {
+        std::exit(3);
+    }
 }
 
 // Nechá fatku vypsat stromovu strukturu, kde jsou vidět čísla clusterů
@@ -146,7 +144,6 @@ const bool Defragmenter::analyze() {
     while(!queue.empty()) {
         auto actual = std::move(queue.front());
         queue.pop();
-        std::printf("Zkoumam soubor: %s\n", getFullPath(actual).c_str());
 
         if (actual->me->file_type == Fat::FILE_TYPE_DIRECTORY) { // Jedná-li se o složku, přidám její obsah na konec zásobníku
             for(auto it = actual->children.rbegin(); it != actual->children.rend(); ++it) {
@@ -158,11 +155,11 @@ const bool Defragmenter::analyze() {
             if (badClusterIndex == 0) {
                 continue;
             }
-            std::printf("Soubor %s potřebuje transfer\n", getFullPath(actual).c_str());
             changedClusters++;
 
             auto lastGoodClusterIndex = badClusterIndex - 1;
             auto goodCluster = clusters.at(lastGoodClusterIndex);
+            int delta = std::abs(static_cast<int>(goodCluster) - static_cast<int>(clusters.at(badClusterIndex)));
             for(unsigned int i = badClusterIndex; i < clusters.size(); i++) {
                 const auto &clusterToReplace = clusters.at(i);
                 auto newCluster = goodCluster + 1;
@@ -174,6 +171,10 @@ const bool Defragmenter::analyze() {
 
                 std::printf("Přesouvám cluster %d na novou pozici: %d\n", clusterToReplace, newCluster);
                 swapFatRegistry(clusterToReplace, newCluster);
+                auto tmp = std::abs(clusterToReplace - newCluster);
+                if (delta - tmp > 0) {
+                    return false;
+                }
                 goodCluster++;
             }
 
