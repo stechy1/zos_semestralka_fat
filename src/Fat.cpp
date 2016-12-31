@@ -234,6 +234,12 @@ void Fat::insertFile(const std::string &t_filePath, const std::string &t_pseudoP
         throw std::runtime_error("Can not create file, folder is full");
     }
 
+    for (auto &&item : parentDirectoryContent) {
+        if(std::strcmp(item->file_name, file->file_name) == 0) {
+            throw std::runtime_error("File already exists");
+        }
+    }
+
     parentDirectoryContent.push_back(file);
     saveClusterWithFiles(parentDirectoryContent, parentDirectory->first_cluster);
 
