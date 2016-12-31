@@ -8,10 +8,11 @@ fi
 file_name=$1
 echo ${file_name}
 
-status="5"
+status="3"
 
-while [ "$status" -eq "5" ]; do
+./zos_semestralka_fat ${file_name} -p
+while [ "$status" -eq "3" ]; do
     ./zos_semestralka_fat ${file_name} -b
     status=$?
-    sleep 0.1
 done
+./zos_semestralka_fat ${file_name} -p

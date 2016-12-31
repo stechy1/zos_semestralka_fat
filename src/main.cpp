@@ -45,11 +45,7 @@ void a(Fat &fat, std::string &&filePath, std::string &&pseudoPath) {
 
 void b(Fat &fat) {
     Defragmenter defragmenter(fat);
-    std::cout << "Before" << std::endl;
-    fat.tree();
     defragmenter.runDefragmentation();
-    std::cout << "After" << std::endl;
-    fat.tree();
 }
 
 void f(Fat &fat, std::string &&pseudoPath) {
