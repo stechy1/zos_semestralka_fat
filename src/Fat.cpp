@@ -106,7 +106,7 @@ void Fat::tree() {
 // Vytvoří nový adresář
 void Fat::createDirectory(const std::string &t_path, const std::string &t_addr) {
     auto parentDirectory = findFileDescriptor(t_path);
-    auto root_dir = makeFile(t_addr, "rwxrwxrwx", m_BootRecord->cluster_size, FILE_TYPE_DIRECTORY, getFreeCluster());
+    auto directory = makeFile(t_addr, "rwxrwxrwx", m_BootRecord->cluster_size, FILE_TYPE_DIRECTORY, getFreeCluster());
 
     std::vector<std::shared_ptr<root_directory>> parentDirectoryContent = loadDirectory(parentDirectory->first_cluster);
 
@@ -114,11 +114,17 @@ void Fat::createDirectory(const std::string &t_path, const std::string &t_addr) 
         throw std::runtime_error("Can not create file, folder is full");
     }
 
-    parentDirectoryContent.push_back(root_dir);
+    for (auto &&item : parentDirectoryContent) {
+        if(std::strcmp(item->file_name, directory->file_name) == 0) {
+            throw std::runtime_error("File already exists");
+        }
+    }
+
+    parentDirectoryContent.push_back(directory);
     saveClusterWithFiles(parentDirectoryContent, parentDirectory->first_cluster);
 
-    setFatPiece(root_dir->first_cluster, FAT_DIRECTORY_CONTENT);
-    saveFatPiece(root_dir->first_cluster, FAT_DIRECTORY_CONTENT);
+    setFatPiece(directory->first_cluster, FAT_DIRECTORY_CONTENT);
+    saveFatPiece(directory->first_cluster, FAT_DIRECTORY_CONTENT);
 }
 
 // Smaže aadresář
