@@ -39,7 +39,13 @@ Defragmenter::~Defragmenter() {}
 
 // Spustí defragmentaci fatky
 void Defragmenter::runDefragmentation() {
-    analyze();
+    for(;;) {
+        auto success = analyze();
+        if (success) {
+            break;
+        }
+    }
+    m_fat.save();
 }
 
 // Nechá fatku vypsat stromovu strukturu, kde jsou vidět čísla clusterů
@@ -130,7 +136,8 @@ void Defragmenter::loadSubTree(const std::shared_ptr<file_entry> t_parent) {
 }
 
 // Analyzuje fat tabulku a vytvoří transakční žurnál
-void Defragmenter::analyze() {
+const bool Defragmenter::analyze() {
+    int changedClusters = 0;
     std::queue<std::shared_ptr<file_entry>> queue;
     for(auto it = m_rootEntry->children.rbegin(); it != m_rootEntry->children.rend(); ++it) {
         queue.push(*it);
@@ -152,6 +159,7 @@ void Defragmenter::analyze() {
                 continue;
             }
             std::printf("Soubor %s potřebuje transfer\n", getFullPath(actual).c_str());
+            changedClusters++;
 
             auto lastGoodClusterIndex = badClusterIndex - 1;
             auto goodCluster = clusters.at(lastGoodClusterIndex);
@@ -168,9 +176,14 @@ void Defragmenter::analyze() {
                 swapFatRegistry(clusterToReplace, newCluster);
                 goodCluster++;
             }
+
+            if (changedClusters > 0) {
+                return false;
+            }
         }
     }
-    m_fat.save();
+
+    return changedClusters == 0;
 }
 
 // Zjistí, zda-li je potřeba shluknout obsah souboru. Pokud ano, vrátí index prvního clusteru, který musí být upraven
@@ -187,12 +200,14 @@ const unsigned int Defragmenter::needReplace(const std::vector<unsigned int> &cl
             if (m_fat.m_workingFatTable[index] == Fat::FAT_DIRECTORY_CONTENT) {
                 while (m_fat.m_workingFatTable[index] == Fat::FAT_DIRECTORY_CONTENT) {
                     index++;
-                    if (index >= clusters.size()) {
+                    if (index >= m_fat.m_BootRecord->cluster_count) {
                         return 0;
                     }
                 }
-                index++;
-                continue;
+                if (index == cluster) {
+                    index++;
+                    continue;
+                }
             }
             return i;
         }

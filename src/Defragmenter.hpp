@@ -57,7 +57,7 @@ private:
 
     void loadSubTree(const std::shared_ptr<file_entry> t_parent);
 
-    void analyze();
+    const bool analyze();
 
     const unsigned int needReplace(const std::vector<unsigned int> &clusters);
 
