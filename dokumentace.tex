@@ -102,38 +102,49 @@ Celý souborový systém je implementován v jazyce C++ a je reprezentován tř�
 \addcontentsline{toc}{section}{Vytvoření nového souboru}
 Při vytváření nového souboru se nejdříve zkontroluje, jestli existuje kopírovaný soubor. Dále se najde rodičovský adresář\ref{lst:insert_file_init} nového souboru.
 \lstinputlisting[language=C++, caption={Inicializace proměnných pro vložení nového souboru}, label={lst:insert_file_init}]{code/insert_file_init.h}
-Dále se zkontroluje, zda-li není rodičovská složka plná a neobsahuje soubor stejného názvu. Když se projdou všechny validace, tak se nejdříve vytvoří záznam v rodičovské složce o novém souboru. Nakonec se překopíruje samotný obsah do virtuálního souborového systému.
+Dále se zkontroluje, zda-li není rodičovská složka plná a neobsahuje soubor stejného názvu. Když projdou všechny validace, tak se najdou volné clustery pro soubor a uloží se obsah. Nakonec se uloží záznam v rodičovské složce o novém souboru. Příklad použítí\ref{lst:insert_file_example}
+\begin{lstlisting}[caption=Vytvoření nového souboru,label=lst:insert_file_example, language=bash]
+./zos_semestralka fat nazev_fatky -a ./f.txt /f.txt
+ \end{lstlisting}
 
 \section*{Smazání souboru}
 \addcontentsline{toc}{section}{Smazání souboru}
+Před samotným smazáním souboru se načte obsah rodičovské složky a odstraní se záznam o souboru. Dále se vymažou záznamy ve fat tabulce. Obsah v clustrech zůstane zachován.
+\begin{lstlisting}[caption=Smazání souboru,label=lst:delete_file_example, language=bash]
+./zos_semestralka fat nazev_fatky -f /f.txt
+ \end{lstlisting}
 
 \section*{Výpis clusterů obsahující data souboru}
 \addcontentsline{toc}{section}{Výpis clusterů obsahující data souboru}
+Příklad výpisu clusterů\ref{lst:clusters}
+\begin{lstlisting}[caption=Výpis clusterů obsahující data souboru,label=lst:clusters, language=bash]
+./zos_semestralka fat nazev_fatky -a ./f.txt /f.txt
+ \end{lstlisting}
+
+\section*{Výpis obsahu souboru}
+\addcontentsline{toc}{section}{Výpis obsahu souboru}
+
 
 \section*{Vytvoření prázdné složky}
 \addcontentsline{toc}{section}{Vytvoření prázdné složky}
+Vytvoření složky probíhá velmi podobně jako vytvoření nového souboru.
 
 \section*{Smazání prázdné složky}
 \addcontentsline{toc}{section}{Smazání prázdné složky}
+Smazání složky probíhá stejným způsobem, jako smazání souboru s tím rozdílem, že před smazáním se zkontroluje, zda-li je složka prázdná. Pokud složka prázdná není, tak se nesmaže.
 
 \section*{Výpis stromové struktury}
 \addcontentsline{toc}{section}{Výpis stromové struktury}
+Pro výpis stromové struktury se používá rekurze. Když se narazí na složku, tak se zavolá rekurzivně metoda pro výpis stromové struktury.
 
 \section*{Defragmentace}
 \addcontentsline{toc}{section}{Defragmentace}
-
-\chapter*{Ovldání programu}
-\addcontentsline{toc}{chapter}{Ovládání programu}
+Úplná defragmentace spočívá v tom, že se nejenom odstraní mezery mezi soubory, ale také se linearizují obsahy souborů tak, aby clustery jednoho souboru byly pohromadě.
+Při defragmentaci se přesouvají pouze clustery souborů. Pokud se narazí na cluster, který obsahuje složku, tak je přeskočen. Celý proces defragmentace běží pouze v jednom vlákně, protože paralelizace neměla smysl. Pouze načtení kompletní stromové struktury před defragmentací se provádí paralelně. Pro dosažení paralelismu se používá Threadpoolu. Defragmentaci je nutné spouštět pomocí přiloženého skriptu \textbf{defragmenter.sh}.
 
 
 \chapter*{Závěr}
 \addcontentsline{toc}{chapter}{Závěr}
-
-
-\begin{thebibliography}{9}
-\addcontentsline{toc}{chapter}{Literatura}
-
-
-\end{thebibliography}
+Vytvořit vlastní souborový systém byla velká výzva. Základní práce jako vytváření a mazání souborů a složek byla jednoduchá. Defragmentace už byla horší. Vzhledem k tomu, že paralelně se pouze načítá stromová struktura a zbytek se provádí v jednom vlákně, tak nejsou přiloženy žádné srovnávací časy.
 
 \end{document}

@@ -4,10 +4,9 @@
 \contentsline {section}{Vytvo\IeC {\v r}en\IeC {\'\i } nov\IeC {\'e}ho souboru}{4}{section*.4}
 \contentsline {section}{Smaz\IeC {\'a}n\IeC {\'\i } souboru}{5}{section*.5}
 \contentsline {section}{V\IeC {\'y}pis cluster\IeC {\r u} obsahuj\IeC {\'\i }c\IeC {\'\i } data souboru}{5}{section*.6}
-\contentsline {section}{Vytvo\IeC {\v r}en\IeC {\'\i } pr\IeC {\'a}zdn\IeC {\'e} slo\IeC {\v z}ky}{5}{section*.7}
-\contentsline {section}{Smaz\IeC {\'a}n\IeC {\'\i } pr\IeC {\'a}zdn\IeC {\'e} slo\IeC {\v z}ky}{5}{section*.8}
-\contentsline {section}{V\IeC {\'y}pis stromov\IeC {\'e} struktury}{5}{section*.9}
-\contentsline {section}{Defragmentace}{5}{section*.10}
-\contentsline {chapter}{Ovl\IeC {\'a}d\IeC {\'a}n\IeC {\'\i } programu}{6}{chapter*.11}
+\contentsline {section}{V\IeC {\'y}pis obsahu souboru}{5}{section*.7}
+\contentsline {section}{Vytvo\IeC {\v r}en\IeC {\'\i } pr\IeC {\'a}zdn\IeC {\'e} slo\IeC {\v z}ky}{5}{section*.8}
+\contentsline {section}{Smaz\IeC {\'a}n\IeC {\'\i } pr\IeC {\'a}zdn\IeC {\'e} slo\IeC {\v z}ky}{6}{section*.9}
+\contentsline {section}{V\IeC {\'y}pis stromov\IeC {\'e} struktury}{6}{section*.10}
+\contentsline {section}{Defragmentace}{6}{section*.11}
 \contentsline {chapter}{Z\IeC {\'a}v\IeC {\v e}r}{7}{chapter*.12}
-\contentsline {chapter}{Literatura}{8}{chapter*.13}
