@@ -106,7 +106,7 @@ void Fat::tree() {
 // Vytvoří nový adresář
 void Fat::createDirectory(const std::string &t_path, const std::string &t_addr) {
     auto parentDirectory = findFileDescriptor(t_path);
-    auto directory = makeFile(t_addr, "rwxrwxrwx", m_BootRecord->cluster_size, FILE_TYPE_DIRECTORY, getFreeCluster());
+    auto directory = makeFile(t_addr, "rwxrwxrwx", m_BootRecord->cluster_size, FILE_TYPE_DIRECTORY, getFreeCluster(0));
 
     std::vector<std::shared_ptr<root_directory>> parentDirectoryContent = loadDirectory(parentDirectory->first_cluster);
 
@@ -228,7 +228,7 @@ void Fat::insertFile(const std::string &t_filePath, const std::string &t_pseudoP
     std::fseek(workingFile, 0L, SEEK_END);
 
     auto fileSize = std::ftell(workingFile);
-    auto file = makeFile(fileName, "rwxrwxrwx", fileSize, FILE_TYPE_FILE, getFreeCluster());
+    auto file = makeFile(fileName, "rwxrwxrwx", fileSize, FILE_TYPE_FILE, getFreeCluster(0));
 
     if (parentDirectoryContent.size() >= m_BootRecord->root_directory_max_entries_count) {
         throw std::runtime_error("Can not create file, folder is full");
@@ -240,10 +240,10 @@ void Fat::insertFile(const std::string &t_filePath, const std::string &t_pseudoP
         }
     }
 
+    writeFile(workingFile, file);
+
     parentDirectoryContent.push_back(file);
     saveClusterWithFiles(parentDirectoryContent, parentDirectory->first_cluster);
-
-    writeFile(workingFile, file);
 
     std::fclose(workingFile);
 }
@@ -708,9 +708,13 @@ void Fat::writeFile(FILE *t_file, std::shared_ptr<root_directory> t_fileEntry) {
     auto remaining = fileSize;
     auto workingCluster = t_fileEntry->first_cluster;
     auto clusterSize = m_BootRecord->cluster_size;
+    auto needClusterCount = fileSize / (double)clusterSize;
+    auto clusters = getFreeClusters(
+            static_cast<unsigned int>((fileSize % clusterSize) != 0 ? ++needClusterCount : needClusterCount ));
+    clusters.erase(clusters.begin()); // Odstranění prvního indexu - ten uz je v t_file_entry->first_cluster
     char tmp[clusterSize];
 
-    while (remaining > 0) {
+    for (auto &&cluster : clusters) {
         auto realReadSize = remaining > clusterSize ? clusterSize : remaining;
         std::memset(&tmp, '\0', clusterSize);
         std::fseek(t_file, fileSize - remaining, SEEK_SET);
@@ -718,15 +722,10 @@ void Fat::writeFile(FILE *t_file, std::shared_ptr<root_directory> t_fileEntry) {
         std::fseek(m_FatFile, getClusterStartIndex(workingCluster), SEEK_SET);
         std::fwrite(&tmp, clusterSize, 1, m_FatFile);
 
-        remaining -= clusterSize;
         std::printf("Zapisuji na cluster cislo: %d: %s\n", workingCluster, tmp);
-
-        setFatPiece(workingCluster, FAT_FILE_END); // Asi zbytečný
-        if (remaining > 0) { // Pokud není konec souboru, nastavím novou hodnotu ve fat tabulce
-            auto newClusterIndex = getFreeCluster();
-            setFatPiece(workingCluster, newClusterIndex);
-            workingCluster = newClusterIndex;
-        }
+        setFatPiece(workingCluster, cluster);
+        workingCluster = cluster;
+        remaining -= clusterSize;
     }
 
     saveFatTables();
@@ -756,8 +755,15 @@ const unsigned int Fat::getClusterStartIndex(unsigned int t_offset) {
 }
 
 // Vrátí první voln cluster
+
 const unsigned int Fat::getFreeCluster() {
-    for (unsigned int i = 0; i < m_BootRecord->cluster_count; ++i) {
+    return getFreeCluster(FAT_FIRST_CONTENT_INDEX);
+}
+
+const unsigned int Fat::getFreeCluster(const unsigned int t_offset) {
+    assert(t_offset < m_BootRecord->cluster_count);
+
+    for (unsigned int i = t_offset; i < m_BootRecord->cluster_count; ++i) {
         if (m_workingFatTable[i] == FAT_UNUSED) {
             return i;
         }
@@ -766,7 +772,21 @@ const unsigned int Fat::getFreeCluster() {
     throw std::runtime_error("Not enough space.");
 }
 
+const std::vector<unsigned int> Fat::getFreeClusters(const unsigned int t_count) {
+    std::vector<unsigned int> result;
+    auto remaining = t_count;
+    unsigned int lastFoundIndex = FAT_FIRST_CONTENT_INDEX;
 
+    while(remaining != 0) {
+        auto index = getFreeCluster(lastFoundIndex);
+        lastFoundIndex = index;
+        result.push_back(index);
+        ++lastFoundIndex;
+        remaining--;
+    }
+
+    return result;
+}
 
 
 

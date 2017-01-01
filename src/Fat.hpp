@@ -189,7 +189,9 @@ private:
     const unsigned int getClusterStartIndex(unsigned int t_offset);
 
     const unsigned int getFreeCluster();
+    const unsigned int getFreeCluster(const unsigned int t_offset);
 
+    const std::vector<unsigned int> getFreeClusters(const unsigned int t_count);
 
 };
 
