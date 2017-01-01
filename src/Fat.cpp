@@ -779,7 +779,7 @@ const std::vector<unsigned int> Fat::getFreeClusters(const unsigned int t_count)
     for (int i = t_count; i >= 0; --i) {
         auto index = getFreeCluster(lastFoundIndex);
         result.push_back(index);
-        ++lastFoundIndex;
+        lastFoundIndex = index + 1;
     }
 
     return result;

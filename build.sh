@@ -16,3 +16,5 @@ done
 cp "../fat_maker.sh" "./fat_maker.sh"
 chmod u+x ./fat_maker.sh
 ./fat_maker.sh
+cp "../defragmenter.sh" "./defragmenter.sh"
+chmod u+x ./defragmenter.sh
