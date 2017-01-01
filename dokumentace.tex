@@ -157,13 +157,20 @@ Pro výpis stromové struktury\ref{lst:tree_structure} se používá rekurze. Kd
 \section*{Defragmentace}
 \addcontentsline{toc}{section}{Defragmentace}
 Úplná defragmentace spočívá v tom, že se nejenom odstraní mezery mezi soubory, ale také se linearizují obsahy souborů tak, aby clustery jednoho souboru byly pohromadě.
-Při defragmentaci se přesouvají pouze clustery souborů. Pokud se narazí na cluster, který obsahuje složku, tak je přeskočen. Celý proces defragmentace běží pouze v jednom vlákně, protože paralelizace neměla smysl. Pouze načtení kompletní stromové struktury před defragmentací se provádí paralelně. Pro dosažení paralelismu se používá Threadpool. Defragmentaci je nutné spouštět pomocí přiloženého skriptu \textbf{defragmenter.sh}\ref{lst:defrag_example}.
+Při defragmentaci se přesouvají pouze clustery souborů. Pokud se narazí na cluster, který obsahuje složku, tak je přeskočen. Celý proces defragmentace běží pouze v jednom vlákně, protože paralelizace neměla smysl. Pouze načtení kompletní stromové struktury před defragmentací se provádí paralelně. Pro dosažení paralelismu se používá Threadpool. Defragmentaci je nutné spouštět pomocí přiloženého skriptu \textbf{defragmenter.sh}\ref{lst:defrag_example}. V průběhu defragmentace se vypisuje průběh procesu.
 \begin{lstlisting}[caption=Spuštění defragmentace,label=lst:defrag_example, language={}]
 ./defragmenter.sh test.fat
+
+Presouvam cluster 19 na novou pozici: 8
+Presouvam cluster 20 na novou pozici: 9
+Presouvam cluster 131 na novou pozici: 23
+Presouvam cluster 132 na novou pozici: 24
+Presouvam cluster 133 na novou pozici: 25
+
  \end{lstlisting}
 
 \chapter*{Závěr}
 \addcontentsline{toc}{chapter}{Závěr}
-Vytvořit vlastní souborový systém byla velká výzva. Základní práce jako vytváření a mazání souborů a složek byla jednoduchá. Defragmentace už byla horší. Vzhledem k tomu, že paralelně se pouze načítá stromová struktura a zbytek se provádí v jednom vlákně, tak nejsou přiloženy žádné srovnávací časy.
+Vytvořit vlastní souborový systém byla velká výzva. Základní práce jako vytváření a odstraňování souborů a složek byla jednoduchá, defragmentace byla složitější. Vzhledem k tomu, že paralelně se pouze načítá stromová struktura a zbytek se provádí v jednom vlákně, tak nejsou přiloženy žádné srovnávací časy.
 
 \end{document}
