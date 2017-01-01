@@ -452,7 +452,7 @@ void Fat::printSubTree(const std::shared_ptr<root_directory> t_rootDirectory, co
         }
         std::printf(",");
     }
-    std::printf("; Clusterů: %d\n", count);
+    std::printf(" (%d)\n", count);
 
     if (isDirectory) {
         auto nextDepth = t_depth + SPACE_SIZE;
