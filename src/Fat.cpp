@@ -106,7 +106,7 @@ void Fat::tree() {
 // Vytvoří nový adresář
 void Fat::createDirectory(const std::string &t_path, const std::string &t_addr) {
     auto parentDirectory = findFileDescriptor(t_path);
-    auto directory = makeFile(t_addr, "rwxrwxrwx", m_BootRecord->cluster_size, FILE_TYPE_DIRECTORY, getFreeCluster(0));
+    auto directory = makeFile(t_addr, "rwxrwxrwx", m_BootRecord->cluster_size, FILE_TYPE_DIRECTORY, getFreeCluster());
 
     std::vector<std::shared_ptr<root_directory>> parentDirectoryContent = loadDirectory(parentDirectory->first_cluster);
 
@@ -228,7 +228,7 @@ void Fat::insertFile(const std::string &t_filePath, const std::string &t_pseudoP
     std::fseek(workingFile, 0L, SEEK_END);
 
     auto fileSize = std::ftell(workingFile);
-    auto file = makeFile(fileName, "rwxrwxrwx", fileSize, FILE_TYPE_FILE, getFreeCluster(0));
+    auto file = makeFile(fileName, "rwxrwxrwx", fileSize, FILE_TYPE_FILE, getFreeCluster(FAT_FIRST_CONTENT_INDEX));
 
     if (parentDirectoryContent.size() >= m_BootRecord->root_directory_max_entries_count) {
         throw std::runtime_error("Can not create file, folder is full");
@@ -296,6 +296,7 @@ const std::string Fat::getClusterContent(const unsigned int t_index) {
     return std::string(tmp);
 }
 
+// Vrátí obsah souboru ve vektoru
 const std::vector<std::string> Fat::readFileContent(const std::shared_ptr<root_directory> t_rootDirectory) {
     return readFileContent(t_rootDirectory->first_cluster, t_rootDirectory->file_size);
 }
@@ -329,7 +330,6 @@ const std::vector<std::string> Fat::readFileContent(const unsigned int t_index, 
 
     return result;
 }
-
 
 // Zapíše surový obsah do clusteru
 void Fat::writeClusterContent(const unsigned int t_index, const std::string &t_data) {
@@ -644,7 +644,6 @@ void Fat::clearFatRecord(long t_offset) {
     saveFatTables();
 }
 
-
 // Vytvoří nový soubor
 std::shared_ptr<root_directory>
 Fat::makeFile(const std::string &t_fileName, const std::string &t_fileMod, long t_fileSize, short t_fileType,
@@ -727,6 +726,7 @@ void Fat::writeFile(FILE *t_file, std::shared_ptr<root_directory> t_fileEntry) {
         workingCluster = cluster;
         remaining -= clusterSize;
     }
+    setFatPiece(workingCluster, Fat::FAT_FILE_END);
 
     saveFatTables();
 }
@@ -754,12 +754,12 @@ const unsigned int Fat::getClusterStartIndex(unsigned int t_offset) {
     return getClustersStartIndex() + t_offset * m_BootRecord->cluster_size;
 }
 
-// Vrátí první voln cluster
-
+// Vrátí první volný cluster
 const unsigned int Fat::getFreeCluster() {
     return getFreeCluster(FAT_FIRST_CONTENT_INDEX);
 }
 
+// Vrátí první volný cluster od zadaného offsetu
 const unsigned int Fat::getFreeCluster(const unsigned int t_offset) {
     assert(t_offset < m_BootRecord->cluster_count);
 
@@ -772,6 +772,7 @@ const unsigned int Fat::getFreeCluster(const unsigned int t_offset) {
     throw std::runtime_error("Not enough space.");
 }
 
+// Vrátí vektor volných clusterů
 const std::vector<unsigned int> Fat::getFreeClusters(const unsigned int t_count) {
     std::vector<unsigned int> result;
     auto remaining = t_count;
