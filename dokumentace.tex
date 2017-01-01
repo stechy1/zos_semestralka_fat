@@ -27,7 +27,7 @@ backgroundcolor=\color{lbcolor},
         extendedchars=false,
         breaklines=true,
         prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
-        frame=single,
+        frame=L,
         numbers=left,
         showtabs=false,
         showspaces=false,
@@ -103,48 +103,64 @@ Celý souborový systém je implementován v jazyce C++ a je reprezentován tř�
 Při vytváření nového souboru se nejdříve zkontroluje, jestli existuje kopírovaný soubor. Dále se najde rodičovský adresář\ref{lst:insert_file_init} nového souboru.
 \lstinputlisting[language=C++, caption={Inicializace proměnných pro vložení nového souboru}, label={lst:insert_file_init}]{code/insert_file_init.h}
 Dále se zkontroluje, zda-li není rodičovská složka plná a neobsahuje soubor stejného názvu. Když projdou všechny validace, tak se najdou volné clustery pro soubor a uloží se obsah. Nakonec se uloží záznam v rodičovské složce o novém souboru. Příklad použítí\ref{lst:insert_file_example}
-\begin{lstlisting}[caption=Vytvoření nového souboru,label=lst:insert_file_example, language=bash]
-./zos_semestralka fat nazev_fatky -a ./f.txt /f.txt
+\begin{lstlisting}[caption=Vytvoření nového souboru,label=lst:insert_file_example, language={}]
+./zos_semestralka_fat test.fat -a ./f.txt /f.txt
  \end{lstlisting}
 
 \section*{Smazání souboru}
 \addcontentsline{toc}{section}{Smazání souboru}
 Před samotným smazáním souboru se načte obsah rodičovské složky a odstraní se záznam o souboru. Dále se vymažou záznamy ve fat tabulce. Obsah v clustrech zůstane zachován.
-\begin{lstlisting}[caption=Smazání souboru,label=lst:delete_file_example, language=bash]
-./zos_semestralka fat nazev_fatky -f /f.txt
+\begin{lstlisting}[caption=Smazání souboru,label=lst:delete_file_example, language={}]
+./zos_semestralka_fat test.fat -f /f.txt
  \end{lstlisting}
 
 \section*{Výpis clusterů obsahující data souboru}
 \addcontentsline{toc}{section}{Výpis clusterů obsahující data souboru}
 Příklad výpisu clusterů\ref{lst:clusters}
-\begin{lstlisting}[caption=Výpis clusterů obsahující data souboru,label=lst:clusters, language=bash]
-./zos_semestralka fat nazev_fatky -c /f.txt
+\begin{lstlisting}[caption=Výpis clusterů obsahující data souboru,label=lst:clusters, language={}]
+./zos_semestralka_fat test.fat -c /a.txt
 
-/f.txt: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 
+/a.txt: 1, 2, 3, 4,
  \end{lstlisting}
  
 
 \section*{Výpis obsahu souboru}
 \addcontentsline{toc}{section}{Výpis obsahu souboru}
+Příklad výpisu clusterů\ref{lst:clusters_content}
+\begin{lstlisting}[caption=Výpis obsahu zadaného souboru,label=lst:clusters_content, language={}]
+./zos_semestralka_fat test.fat -l /a.txt
 
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris commodo, ipsum ac commodo imperdiet, tortor ante euismod nisi, quis aliquet nibh quam eu justo. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed in feugiat lacus. Morbi eget ante varius, tincidunt neque consequat, tincidunt tellus. Cras hendrerit mi vitae convallis mollis. Donec eu nisi vehicula, pellentesque sem at, interdum sapien. Sed ullamcorper tristique sapien, in rhoncus metus hendrerit non. Nam elementum neque enim, vitae laoreet ligula blandit nec.
+ \end{lstlisting}
+ 
 
 \section*{Vytvoření prázdné složky}
 \addcontentsline{toc}{section}{Vytvoření prázdné složky}
-Vytvoření složky probíhá velmi podobně jako vytvoření nového souboru.
+Vytvoření složky\ref{lst:create_folder_example} probíhá velmi podobně jako vytvoření nového souboru.
+\begin{lstlisting}[caption=Smazání souboru,label=lst:create_folder_example, language={}]
+./zos_semestralka_fat test.fat -m bin /
+ \end{lstlisting}
 
 \section*{Smazání prázdné složky}
 \addcontentsline{toc}{section}{Smazání prázdné složky}
-Smazání složky probíhá stejným způsobem, jako smazání souboru s tím rozdílem, že před smazáním se zkontroluje, zda-li je složka prázdná. Pokud složka prázdná není, tak se nesmaže.
+Smazání složky\ref{lst:delete_folder_example} probíhá stejným způsobem, jako smazání souboru s tím rozdílem, že před smazáním se zkontroluje, zda-li je složka prázdná. Pokud složka prázdná není, tak se nesmaže.
+\begin{lstlisting}[caption=Smazání souboru,label=lst:delete_folder_example, language={}]
+./zos_semestralka_fat test.fat -r /bin
+ \end{lstlisting}
+
 
 \section*{Výpis stromové struktury}
 \addcontentsline{toc}{section}{Výpis stromové struktury}
-Pro výpis stromové struktury se používá rekurze. Když se narazí na složku, tak se zavolá rekurzivně metoda pro výpis stromové struktury.
+Pro výpis stromové struktury\ref{lst:tree_structure} se používá rekurze. Když se narazí na složku, tak se zavolá rekurzivně metoda pro výpis stromové struktury.
+\lstinputlisting[language={}, caption={Výpis stromové struktury}, label={lst:tree_structure}]{code/tree_structure.txt}
 
 \section*{Defragmentace}
 \addcontentsline{toc}{section}{Defragmentace}
 Úplná defragmentace spočívá v tom, že se nejenom odstraní mezery mezi soubory, ale také se linearizují obsahy souborů tak, aby clustery jednoho souboru byly pohromadě.
-Při defragmentaci se přesouvají pouze clustery souborů. Pokud se narazí na cluster, který obsahuje složku, tak je přeskočen. Celý proces defragmentace běží pouze v jednom vlákně, protože paralelizace neměla smysl. Pouze načtení kompletní stromové struktury před defragmentací se provádí paralelně. Pro dosažení paralelismu se používá Threadpoolu. Defragmentaci je nutné spouštět pomocí přiloženého skriptu \textbf{defragmenter.sh}.
-
+Při defragmentaci se přesouvají pouze clustery souborů. Pokud se narazí na cluster, který obsahuje složku, tak je přeskočen. Celý proces defragmentace běží pouze v jednom vlákně, protože paralelizace neměla smysl. Pouze načtení kompletní stromové struktury před defragmentací se provádí paralelně. Pro dosažení paralelismu se používá Threadpool. Defragmentaci je nutné spouštět pomocí přiloženého skriptu \textbf{defragmenter.sh}\ref{lst:defrag_example}.
+\begin{lstlisting}[caption=Spuštění defragmentace,label=lst:defrag_example, language={}]
+./defragmenter.sh test.fat
+ \end{lstlisting}
 
 \chapter*{Závěr}
 \addcontentsline{toc}{chapter}{Závěr}

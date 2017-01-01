@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=pdflatex 2016.11.16)  1 JAN 2017 13:55
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=pdflatex 2016.11.16)  1 JAN 2017 19:01
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -884,60 +884,55 @@ Package hyperref Warning: Composite letter `\textasciicaron+r'
 (hyperref)                removing `\textasciicaron' on input line 102.
 
 (./code/insert_file_init.h [4])
-(/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
-File: lstlang1.sty 2015/06/04 1.6 listings language file
-)
-(/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
-File: lstlang1.sty 2015/06/04 1.6 listings language file
-)
 
 Package hyperref Warning: Composite letter `\textring+u'
 (hyperref)                not defined in PD1 encoding,
 (hyperref)                removing `\textring' on input line 118.
 
+[5]
 
 Package hyperref Warning: Composite letter `\textasciicaron+r'
 (hyperref)                not defined in PD1 encoding,
-(hyperref)                removing `\textasciicaron' on input line 132.
+(hyperref)                removing `\textasciicaron' on input line 138.
 
 
-Overfull \hbox (1.25073pt too wide) in paragraph at lines 137--138
-\OT1/cmr/m/n/10 Smaz^^San^^S^^P slo^^Tzky prob^^S^^Ph^^Sa stejn^^Sym zp^^Wusobe
-m, jako smaz^^San^^S^^P sou-boru s t^^S^^Pm rozd^^S^^Plem,
+Overfull \hbox (11.25076pt too wide) in paragraph at lines 146--147
+\OT1/cmr/m/n/10 Smaz^^San^^S^^P slo^^Tzky[]10[] prob^^S^^Ph^^Sa stejn^^Sym zp^^
+Wusobem, jako smaz^^San^^S^^P sou-boru s t^^S^^Pm rozd^^S^^Plem,
  []
 
-[5] [6]
+(./code/tree_structure.txt [6]) [7]
 
 Package hyperref Warning: Composite letter `\textasciicaron+e'
 (hyperref)                not defined in PD1 encoding,
-(hyperref)                removing `\textasciicaron' on input line 150.
+(hyperref)                removing `\textasciicaron' on input line 166.
 
 
-Overfull \hbox (7.27861pt too wide) in paragraph at lines 151--152
+Overfull \hbox (7.27861pt too wide) in paragraph at lines 167--168
 \OT1/cmr/m/n/10 Vytvo^^Trit vlastn^^S^^P sou-bo-rov^^Sy syst^^Sem byla velk^^Sa
  v^^Syzva. Z^^Sakladn^^S^^P pr^^Sace jako vytv^^Sa^^Tren^^S^^P
  []
 
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 153.
-[7
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 169.
+[8
 
 ]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 153.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 169.
  (./dokumentace.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 153.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 153.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 169.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 169.
 Package rerunfilecheck Info: File `dokumentace.out' has not changed.
 (rerunfilecheck)             Checksum: E6143639000E6DF1C2FA373A99231EF9;750.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 153.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 169.
  ) 
 Here is how much of TeX's memory you used:
- 9822 strings out of 494919
- 143398 string characters out of 6179679
- 358957 words of memory out of 5000000
- 12891 multiletter control sequences out of 15000+600000
+ 9918 strings out of 494919
+ 144405 string characters out of 6179679
+ 358947 words of memory out of 5000000
+ 12962 multiletter control sequences out of 15000+600000
  9033 words of font info for 32 fonts, out of 8000000 for 9000
  24 hyphenation exceptions out of 8191
- 40i,6n,67p,503b,1110s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 40i,6n,67p,573b,1110s stack positions out of 5000i,500n,10000p,200000b,80000s
  </home/petr/.texmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1000.600pk></usr/shar
 e/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/share/texl
 ive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/share/texlive/te
@@ -949,10 +944,10 @@ c/amsfonts/cm/cmr5.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfon
 ts/cm/cmr8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cm
 sy8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti12.pf
 b></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt8.pfb>
-Output written on dokumentace.pdf (8 pages, 298289 bytes).
+Output written on dokumentace.pdf (9 pages, 303084 bytes).
 PDF statistics:
- 274 PDF objects out of 1000 (max. 8388607)
- 236 compressed objects within 3 object streams
- 98 named destinations out of 1000 (max. 500000)
+ 312 PDF objects out of 1000 (max. 8388607)
+ 273 compressed objects within 3 object streams
+ 123 named destinations out of 1000 (max. 500000)
  94 words of extra memory for PDF output out of 10000 (max. 10000000)
 
