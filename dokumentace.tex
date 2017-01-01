@@ -12,6 +12,52 @@
 \usepackage{color}
 \usepackage{booktabs}
 
+\definecolor{listinggray}{gray}{0.9}
+\definecolor{lbcolor}{rgb}{0.9,0.9,0.9}
+\lstset{
+backgroundcolor=\color{lbcolor},
+    tabsize=4,    
+%   rulecolor=,
+    language=[GNU]C++,
+        basicstyle=\scriptsize,
+        upquote=true,
+        aboveskip={1.5\baselineskip},
+        columns=fixed,
+        showstringspaces=false,
+        extendedchars=false,
+        breaklines=true,
+        prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+        frame=single,
+        numbers=left,
+        showtabs=false,
+        showspaces=false,
+        showstringspaces=false,
+        identifierstyle=\ttfamily,
+        keywordstyle=\color[rgb]{0,0,1},
+        commentstyle=\color[rgb]{0.026,0.112,0.095},
+        stringstyle=\color[rgb]{0.627,0.126,0.941},
+        numberstyle=\color[rgb]{0.205, 0.142, 0.73},
+%        \lstdefinestyle{C++}{language=C++,style=numbers}’.
+}
+\lstset{
+    backgroundcolor=\color{lbcolor},
+    tabsize=4,
+  language=C++,
+  captionpos=b,
+  tabsize=3,
+  frame=lines,
+  numbers=left,
+  numberstyle=\tiny,
+  numbersep=5pt,
+  breaklines=true,
+  showstringspaces=false,
+  basicstyle=\footnotesize,
+%  identifierstyle=\color{magenta},
+  keywordstyle=\color[rgb]{0,0,1},
+  commentstyle=\color[rgb]{0.026,0.112,0.095},
+  stringstyle=\color{red}
+}
+
 \begin{document}
 
 \begin{titlepage}
@@ -32,10 +78,56 @@
 
 \chapter*{Zadání}
 \addcontentsline{toc}{chapter}{Zadání}
+Vytvořte jednoduchý souborový systém, který bude organizován pomocí pseudoFAT tabulky. Nad souborovým systémem budete provádět následující operace:
+\begin{itemize}
+\item Vytvoření nového souboru
+\item Smazání souboru
+\item Vypsat čísla clusterů obsahující data zadaného souboru
+\item Vypsat obsah souboru
+\item Vytvoření prázdné složky
+\item Smazání prázdné sožky
+\item Vypsat stromovou strukturu celého souborového systému
+\item Provést úplnou defragmentaci souborového systému
+\end{itemize}
+
+\chapter*{Implementace}
+\addcontentsline{toc}{chapter}{Implementace}
+Souborový systém se snaží simulovat prostředí v linuxu. Jako znak oddělující jednotlivé soubory a složky od sebe je použito "/". Kořenový adresář se jmenuje "/". Při implementaci byla použity následující struktury pro boot record\ref{lst:boot_record} a root directory\ref{lst:root_directory}:
+\lstinputlisting[language=C++, caption={Struktura pro boot record}, label={lst:boot_record}]{code/boot_record.h}
+\lstinputlisting[language=C++, caption={Struktura pro root directory}, label={lst:root_directory}]{code/root_directory.h}
+Celý souborový systém je implementován v jazyce C++ a je reprezentován třídou Fat. Třída Fat obsahuje následující veřejné metody\ref{lst:fat_public_methods}:
+\lstinputlisting[language=C++, caption={Veřejné metody třídy Fat}, label={lst:fat_public_methods}]{code/fat_public_methods.h}
+
+\section*{Vytvoření nového souboru}
+\addcontentsline{toc}{section}{Vytvoření nového souboru}
+Při vytváření nového souboru se nejdříve zkontroluje, jestli existuje kopírovaný soubor. Dále se najde rodičovský adresář\ref{lst:insert_file_init} nového souboru.
+\lstinputlisting[language=C++, caption={Inicializace proměnných pro vložení nového souboru}, label={lst:insert_file_init}]{code/insert_file_init.h}
+Dále se zkontroluje, zda-li není rodičovská složka plná a neobsahuje soubor stejného názvu. Když se projdou všechny validace, tak se nejdříve vytvoří záznam v rodičovské složce o novém souboru. Nakonec se překopíruje samotný obsah do virtuálního souborového systému.
+
+\section*{Smazání souboru}
+\addcontentsline{toc}{section}{Smazání souboru}
+
+\section*{Výpis clusterů obsahující data souboru}
+\addcontentsline{toc}{section}{Výpis clusterů obsahující data souboru}
+
+\section*{Vytvoření prázdné složky}
+\addcontentsline{toc}{section}{Vytvoření prázdné složky}
+
+\section*{Smazání prázdné složky}
+\addcontentsline{toc}{section}{Smazání prázdné složky}
+
+\section*{Výpis stromové struktury}
+\addcontentsline{toc}{section}{Výpis stromové struktury}
+
+\section*{Defragmentace}
+\addcontentsline{toc}{section}{Defragmentace}
+
+\chapter*{Ovldání programu}
+\addcontentsline{toc}{chapter}{Ovládání programu}
 
 
-\section*{Závěr}
-\addcontentsline{toc}{section}{Závěr}
+\chapter*{Závěr}
+\addcontentsline{toc}{chapter}{Závěr}
 
 
 \begin{thebibliography}{9}
