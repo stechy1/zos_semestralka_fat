@@ -707,9 +707,8 @@ void Fat::writeFile(FILE *t_file, std::shared_ptr<root_directory> t_fileEntry) {
     auto remaining = fileSize;
     auto workingCluster = t_fileEntry->first_cluster;
     auto clusterSize = m_BootRecord->cluster_size;
-    auto needClusterCount = fileSize / (double)clusterSize;
-    auto clusters = getFreeClusters(
-            static_cast<unsigned int>((fileSize % clusterSize) != 0 ? ++needClusterCount : needClusterCount ));
+    auto needClusterCount = static_cast<unsigned int>(std::ceil(fileSize / static_cast<double>(clusterSize)));
+    auto clusters = getFreeClusters(needClusterCount);
     clusters.erase(clusters.begin()); // Odstranění prvního indexu - ten uz je v t_file_entry->first_cluster
     char tmp[clusterSize];
 
@@ -775,20 +774,13 @@ const unsigned int Fat::getFreeCluster(const unsigned int t_offset) {
 // Vrátí vektor volných clusterů
 const std::vector<unsigned int> Fat::getFreeClusters(const unsigned int t_count) {
     std::vector<unsigned int> result;
-    auto remaining = t_count;
     unsigned int lastFoundIndex = FAT_FIRST_CONTENT_INDEX;
 
-    while(remaining != 0) {
+    for (int i = t_count; i >= 0; --i) {
         auto index = getFreeCluster(lastFoundIndex);
-        lastFoundIndex = index;
         result.push_back(index);
         ++lastFoundIndex;
-        remaining--;
     }
 
     return result;
 }
-
-
-
-
