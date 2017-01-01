@@ -1,6 +1,7 @@
 #!/bin/bash
 
 FILES=`ls files`
+fatFile='test.fat'
 
 rm -rf build
 mkdir build
@@ -15,6 +16,6 @@ done
 
 cp "../fat_maker.sh" "./fat_maker.sh"
 chmod u+x ./fat_maker.sh
-./fat_maker.sh
+./fat_maker.sh ${fatFile}
 cp "../defragmenter.sh" "./defragmenter.sh"
 chmod u+x ./defragmenter.sh
